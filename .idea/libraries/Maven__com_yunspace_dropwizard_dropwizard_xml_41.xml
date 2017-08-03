@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.yunspace.dropwizard:dropwizard-xml:41">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/yunspace/dropwizard/dropwizard-xml/41/dropwizard-xml-41.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/yunspace/dropwizard/dropwizard-xml/41/dropwizard-xml-41-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/yunspace/dropwizard/dropwizard-xml/41/dropwizard-xml-41-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

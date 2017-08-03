@@ -1,7 +1,7 @@
 server:
   applicationConnectors:
   - type: http 
-    port: 6000
+    port: 8000
   adminConnectors:
   - type: http
-    port: 6001
+    port: 8001
