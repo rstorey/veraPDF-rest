@@ -68,8 +68,9 @@ import jersey.repackaged.com.google.common.collect.Lists;
  */
 public class ValidateResource {
 	private static final ProfileDirectory DIRECTORY = Profiles.getVeraProfileDirectory();
-	// java.security.digest name for the MD5 algorithm
+	// java.security.digest name for the SHA-1 algorithm
 	private static final String SHA1_NAME = "SHA-1"; //$NON-NLS-1$
+	private static final String AUTODETECT_PROFILE = "auto";
 	private static final String WIKI_URL_BASE = "https://github.com/veraPDF/veraPDF-validation-profiles/wiki/"; //$NON-NLS-1$
 	{
 		VeraGreenfieldFoundryProvider.initialise();
@@ -77,7 +78,7 @@ public class ValidateResource {
 
 	/**
 	 * @param profileId
-	 *            the String id of the Validation profile (1b, 1a, 2b, 2a, 2u,
+	 *            the String id of the Validation profile (auto, 1b, 1a, 2b, 2a, 2u,
 	 *            3b, 3a, or 3u)
 	 * @param sha1Hex
 	 *            the hex String representation of the file's SHA-1 hash
@@ -95,30 +96,49 @@ public class ValidateResource {
 	public static ValidationResult validate(@PathParam("profileid") String profileId,
 			@FormDataParam("sha1Hex") String sha1Hex, @FormDataParam("file") InputStream uploadedInputStream,
 			@FormDataParam("file") final FormDataContentDisposition contentDispositionHeader) throws VeraPDFException {
-		PDFAFlavour flavour = PDFAFlavour.byFlavourId(profileId);
+
 		MessageDigest sha1 = getDigest();
 		DigestInputStream dis = new DigestInputStream(uploadedInputStream, sha1);
 		ValidationResult result = ValidationResults.defaultResult();
-		try (PDFAParser toValidate = Foundries.defaultInstance().createParser(dis, flavour)) {
-			PDFAValidator validator = ValidatorFactory.createValidator(flavour, false);
-			result = validator.validate(toValidate);
-		} catch (ModelParsingException mpExcep) {
-			// If we have the same sha-1 then it's a PDF Box parse error, so
-			// treat as non PDF.
-			if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
-				throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
-						.type(MediaType.TEXT_PLAIN).entity("File does not appear to be a PDF.").build(), mpExcep); //$NON-NLS-1$
+
+		if(!profileId.equals(AUTODETECT_PROFILE)) {
+			PDFAFlavour flavour = PDFAFlavour.byFlavourId(profileId);
+			try (PDFAParser toValidate = Foundries.defaultInstance().createParser(dis, flavour)) {
+				PDFAValidator validator = ValidatorFactory.createValidator(flavour, false);
+				result = validator.validate(toValidate);
+			} catch (ModelParsingException mpExcep) {
+				// If we have the same sha-1 then it's a PDF Box parse error, so
+				// treat as non PDF.
+				if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
+					throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
+							.type(MediaType.TEXT_PLAIN).entity("File does not appear to be a PDF.").build(), mpExcep); //$NON-NLS-1$
+				}
+				throw mpExcep;
+			} catch (IOException excep) {
+				excep.printStackTrace();
 			}
-			throw mpExcep;
-		} catch (IOException excep) {
-			excep.printStackTrace();
+		} else {
+			try (PDFAParser parser = Foundries.defaultInstance().createParser(dis)) {
+				PDFAValidator validator = Foundries.defaultInstance().createValidator(parser.getFlavour(), false);
+				result = validator.validate(parser);
+			} catch (ModelParsingException mpExcep) {
+				// If we have the same sha-1 then it's a PDF Box parse error, so
+				// treat as non PDF.
+				if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
+					throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
+							.type(MediaType.TEXT_PLAIN).entity("File does not appear to be a PDF.").build(), mpExcep); //$NON-NLS-1$
+				}
+				throw mpExcep;
+			} catch (IOException excep) {
+				excep.printStackTrace();
+			}
 		}
 		return result;
 	}
 
 	/**
 	 * @param profileId
-	 *            the String id of the Validation profile (1b, 1a, 2b, 2a, 2u,
+	 *            the String id of the Validation profile (auto, 1b, 1a, 2b, 2a, 2u,
 	 *            3b, 3a, or 3u)
 	 * @param sha1Hex
 	 *            the hex String representation of the file's SHA-1 hash
@@ -150,9 +170,11 @@ public class ValidateResource {
 			throw new VeraPDFException("IOException creating a temp file", excep); //$NON-NLS-1$
 		}
 
-		PDFAFlavour flavour = PDFAFlavour.byFlavourId(profileId);
-		ValidatorConfig validConf = ValidatorFactory.createConfig(flavour, false, 100);
-		ProcessorConfig config = createValidateConfig(validConf);
+
+        PDFAFlavour flavour = PDFAFlavour.byFlavourId(profileId);
+        ValidatorConfig validConf = ValidatorFactory.createConfig(flavour, false, 100);
+        ProcessorConfig config = createValidateConfig(validConf);
+
 
 		byte[] htmlBytes = new byte[0];
 		try (ByteArrayOutputStream xmlBos = new ByteArrayOutputStream()) {

@@ -89,7 +89,7 @@ $(document).ready(function () {
   $('div.setup-panel div a.btn-primary').trigger('click');
 });
 
-var flavour = "1b";
+var flavour = "auto";
 
 function changeFlavour(newFlavour) {
   flavour = newFlavour;
