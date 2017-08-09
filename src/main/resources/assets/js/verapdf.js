@@ -89,6 +89,7 @@ $(document).ready(function () {
   $('div.setup-panel div a.btn-primary').trigger('click');
 });
 
+// Default profile flavour to use for validation
 var flavour = "auto";
 
 function changeFlavour(newFlavour) {
