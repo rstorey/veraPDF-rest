@@ -34,6 +34,12 @@ Tested lightly:
 docker build -t verapdf-rest:latest . && docker run -d -p 8080:8080 -p 8081:8081 verapdf-rest:latest
 ```
 
+If you encounter an error during docker run about "Can't set cookie dm_task_set_cookie failed", try:
+
+```
+sudo dmsetup udevcomplete_all
+```
+
 The built verapdf-rest image is notable smaller than just the base Maven image even before you consider the 
 downloaded dependencies so the multi-stage build is definitely worthwhile:
 
