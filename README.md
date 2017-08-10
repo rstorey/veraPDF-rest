@@ -31,7 +31,7 @@ the entire build tool-chain.
 Tested lightly:
 
 ```
-docker build -t verapdf-rest:latest . && docker run -p 8080:8080 -p 8081:8081 verapdf-rest:latest
+docker build -t verapdf-rest:latest . && docker run -d -p 8080:8080 -p 8081:8081 verapdf-rest:latest
 ```
 
 The built verapdf-rest image is notable smaller than just the base Maven image even before you consider the 
