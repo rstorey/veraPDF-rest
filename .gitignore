@@ -1,6 +1,4 @@
 target/
-.idea/
-*.iml
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -9,6 +7,10 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+
+# Ignore IntelliJ artifacts
+.idea/
+*.iml
 
 # Ignore Eclipse artifacts
 .project

@@ -1,16 +1,12 @@
-/**
- * 
- */
 package org.verapdf.rest.resources;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -30,8 +26,8 @@ public class ByteStreamResource {
     /**
      * Default public constructor required by Jersey / Dropwizard
      */
-    public ByteStreamResource() {
-        /** Intentionally blank */
+    ByteStreamResource() {
+        /* Intentionally blank */
     }
 
     /**
@@ -39,7 +35,7 @@ public class ByteStreamResource {
      *            InputStream for the uploaded file
      * @param contentDispositionHeader
      *            extra info about the uploaded file, currently unused.
-     * @return the {@link org.verapdf.pdfa.metadata.bytestream.ByteStreamId} of
+     * @return the {@link org.openpreservation.bytestreams.ByteStreamId} of
      *         the uploaded file's byte stream serialised according to requested
      *         content type.
      */
@@ -50,19 +46,31 @@ public class ByteStreamResource {
     public static ByteStreamId getSha1(
             @FormDataParam("file") InputStream uploadedInputStream,
             @FormDataParam("file") final FormDataContentDisposition contentDispositionHeader) {
-        try {
-            ByteStreamId id = ByteStreams.idFromStream(uploadedInputStream);
-            uploadedInputStream.close();
-            return id;// return
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return ByteStreams.nullByteStreamId();
+            return calculateSha1(uploadedInputStream);
     }
 
     /**
-     * @return the {@link org.verapdf.pdfa.metadata.bytestream.ByteStreamId} of
+     * @param inFile
+     *            byte[] of the incoming file
+     * @param httpHeaders
+     *          the {@link javax.ws.rs.core.Context} with {@link javax.ws.rs.core.HttpHeaders}
+     * @return the {@link org.openpreservation.bytestreams.ByteStreamId} of
+     *         the uploaded file's byte stream serialised according to requested
+     *         content type.
+     */
+    @PUT
+    @Consumes(MediaType.WILDCARD)
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML,
+            MediaType.TEXT_XML })
+    public static ByteStreamId getSha1Put(
+           @Context HttpHeaders httpHeaders,
+           byte [] inFile) {
+        return calculateSha1(new ByteArrayInputStream(inFile));
+    }
+
+
+    /**
+     * @return the {@link org.openpreservation.bytestreams.ByteStreamId} of
      *         an empty (0 byte) byte stream serialised according to requested
      *         content type.
      */
@@ -73,4 +81,16 @@ public class ByteStreamResource {
     public static ByteStreamId getEmptySha1() {
         return ByteStreams.nullByteStreamId();
     }
+
+    private static ByteStreamId calculateSha1(InputStream uploadedInputStream) {
+        try {
+            ByteStreamId id = ByteStreams.idFromStream(uploadedInputStream);
+            uploadedInputStream.close();
+            return id;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ByteStreams.nullByteStreamId();
+    }
+
 }
