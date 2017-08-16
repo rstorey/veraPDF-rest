@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.openpreservation.bytestreams;
 
 import java.io.BufferedInputStream;
@@ -57,17 +54,16 @@ public final class ByteStreams {
         try {
             // Try for MD5 alg
             SHA1 = MessageDigest.getInstance(SHA1_NAME);
-        } catch (NoSuchAlgorithmException excep) {
+        } catch (NoSuchAlgorithmException exception) {
             // If this happens the Java Digest algorithms aren't present, a
             // faulty Java install??
             throw new IllegalStateException(
                     "No digest algorithm implementation for " + SHA1_NAME //$NON-NLS-1$
-                            + ", check you Java installation.", excep); //$NON-NLS-1$
+                            + ", check you Java installation.", exception); //$NON-NLS-1$
         }
     }
 
     private ByteStreams() {
-        /** Disable default constructor, this should never happen */
         throw new AssertionError("[ByteStreams] In default constructor."); //$NON-NLS-1$
     }
 
@@ -76,7 +72,7 @@ public final class ByteStreams {
      * 
      * @return the {@link ByteStreamId} of an empty byte stream
      */
-    public static final ByteStreamId nullByteStreamId() {
+    public static ByteStreamId nullByteStreamId() {
         return ByteStreamIdImpl.NULL_STREAM_ID;
     }
 
@@ -85,7 +81,7 @@ public final class ByteStreams {
      *
      * @return the {@link ByteStreamId} of an unidentified ByteStream
      */
-    public static final ByteStreamId unidentifiedByteStreamId() {
+    public static ByteStreamId unidentifiedByteStreamId() {
         return ByteStreamIdImpl.UNIDENTIFIED_STREAM;
     }
 
@@ -101,8 +97,8 @@ public final class ByteStreams {
      *            a hex-encoded sha1 value for the byte stream
      * @return a new ByteStream instance populated from the passed values
      */
-    public static final ByteStreamId idFromValues(final long length,
-            final String sha1) {
+    public static ByteStreamId idFromValues(final long length,
+                                            final String sha1) {
         return ByteStreamIdImpl.fromValues(length, sha1);
     }
 
@@ -118,7 +114,7 @@ public final class ByteStreams {
      * @throws IOException
      *             when the InputStream cannot be read
      */
-    public static final ByteStreamId idFromStream(final InputStream inStream)
+    public static ByteStreamId idFromStream(final InputStream inStream)
             throws IOException {
         if (inStream == null)
             throw new IllegalArgumentException("inStream == null"); //$NON-NLS-1$
@@ -129,12 +125,12 @@ public final class ByteStreams {
         BufferedInputStream bis = new BufferedInputStream(SHA1Stream);
         byte[] buff = new byte[BUFFER_SIZE];
         long totalBytes = 0L;
-        int bytesRead = 0;
+        int bytesRead;
         // Read the entire stream while calculating the length
         while ((bytesRead = bis.read(buff, 0, BUFFER_SIZE)) > -1) {
             totalBytes += bytesRead;
         }
-        // Return the new instance from the calulated details
+        // Return the new instance from the calculated details
         return (totalBytes == 0L) ? ByteStreams.nullByteStreamId()
                 : ByteStreamIdImpl.fromValues(totalBytes,
                         Hex.encodeHexString(SHA1.digest()));
@@ -151,7 +147,7 @@ public final class ByteStreams {
      * @throws IOException
      *             when the InputStream opened from the file cannot be read
      */
-    public static final ByteStreamId idFromFile(final File file)
+    public static ByteStreamId idFromFile(final File file)
             throws FileNotFoundException, IOException {
         if (file == null)
             throw new IllegalArgumentException("file == null"); //$NON-NLS-1$
@@ -172,7 +168,7 @@ public final class ByteStreams {
      *            java.lang.String to test to see if it's a hex SHA-1 string
      * @return true if the String matches the hex SHA-1 RegEx, false if not.
      */
-    public static final boolean isHexSHA1(final String toTest) {
+    public static boolean isHexSHA1(final String toTest) {
         if (toTest == null)
             throw new IllegalArgumentException("toTest == null"); //$NON-NLS-1$
         Matcher matcher = HEX_SHA1_PATTERN.matcher(toTest);
@@ -194,7 +190,8 @@ public final class ByteStreams {
         if (bytes < unit)
             return bytes + " B"; //$NON-NLS-1$
         int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) //$NON-NLS-1$ //$NON-NLS-2$
+        //noinspection SpellCheckingInspection
+        @SuppressWarnings("SpellCheckingInspection") String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) //$NON-NLS-1$ //$NON-NLS-2$
                 + (si ? "" : "i"); //$NON-NLS-1$ //$NON-NLS-2$
         return String.format(
                 "%.1f %sB", Double.valueOf(bytes / Math.pow(unit, exp)), pre); //$NON-NLS-1$

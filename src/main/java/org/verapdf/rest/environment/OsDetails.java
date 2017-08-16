@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.environment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +24,7 @@ public class OsDetails {
 	/**
 	 * @return the OS Details instance
 	 */
-	public final static OsDetails getInstance() {
+	public static OsDetails getInstance() {
 		return INSTANCE;
 	}
 	

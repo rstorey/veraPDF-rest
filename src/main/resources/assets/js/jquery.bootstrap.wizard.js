@@ -48,7 +48,7 @@ var bootstrapWizardCreate = function(element, options) {
 
 	this.next = function(e) {
 
-		// If we clicked the last then dont activate this
+		// If we clicked the last then don't activate this
 		if(element.hasClass('last')) {
 			return false;
 		}
@@ -67,7 +67,7 @@ var bootstrapWizardCreate = function(element, options) {
 
 	this.previous = function(e) {
 
-		// If we clicked the first then dont activate this
+		// If we clicked the first then don't activate this
 		if(element.hasClass('first')) {
 			return false;
 		}

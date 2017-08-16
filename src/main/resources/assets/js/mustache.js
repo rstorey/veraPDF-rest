@@ -536,7 +536,7 @@
   Writer.prototype.renderInverted = function renderInverted (token, context, partials, originalTemplate) {
     var value = context.lookup(token[1]);
 
-    // Use JavaScript's definition of falsy. Include empty arrays.
+    // Use JavaScript's definition of false. Include empty arrays.
     // See https://github.com/janl/mustache.js/issues/186
     if (!value || (isArray(value) && value.length === 0))
       return this.renderTokens(token[4], context, partials, originalTemplate);

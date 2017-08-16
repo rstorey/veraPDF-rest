@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.openpreservation.bytestreams;
 
 
@@ -26,8 +23,8 @@ final class ByteStreamIdImpl implements ByteStreamId, Comparable<ByteStreamId> {
 		this.hexSHA1 = sha1;
 	}
 
-	static final ByteStreamIdImpl fromValues(final long length,
-			final String sha1) {
+	static ByteStreamIdImpl fromValues(final long length,
+									   final String sha1) {
 		if (length < 1L)
 			throw new IllegalArgumentException("(length " + length //$NON-NLS-1$
 					+ " < 1) == true"); //$NON-NLS-1$

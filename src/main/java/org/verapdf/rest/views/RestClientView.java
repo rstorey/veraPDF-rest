@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.views;
 
 import io.dropwizard.views.View;

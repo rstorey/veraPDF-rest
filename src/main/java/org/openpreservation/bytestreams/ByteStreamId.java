@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.openpreservation.bytestreams;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

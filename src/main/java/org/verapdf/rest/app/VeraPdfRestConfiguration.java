@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.app;
 
 import io.dropwizard.Configuration;

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.environment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

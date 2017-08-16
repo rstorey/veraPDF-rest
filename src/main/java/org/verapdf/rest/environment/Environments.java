@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.environment;
 
 import java.net.InetAddress;
@@ -88,12 +85,12 @@ public final class Environments {
             OS_NAME = System.getProperty(OS_NAME_PROP);
             OS_VERSION = System.getProperty(OS_VERSION_PROP);
             OS_ARCH = System.getProperty(OS_ARCH_PROP);
-        } catch (UnknownHostException excep) {
+        } catch (UnknownHostException exception) {
             throw new IllegalStateException(
-                    "Illegal length IP address, check your setup.", excep); //$NON-NLS-1$
-        } catch (SocketException excep) {
+                    "Illegal length IP address, check your setup.", exception); //$NON-NLS-1$
+        } catch (SocketException exception) {
             throw new IllegalStateException(
-                    "Socket Exception when finding MACH address.", excep); //$NON-NLS-1$
+                    "Socket Exception when finding MACH address.", exception); //$NON-NLS-1$
         }
     }
     /** ISO Date pattern for ISO 8601 Date */
@@ -109,42 +106,42 @@ public final class Environments {
     /**
      * @return the Environment instance
      */
-    public static final Environment getEnvironment() {
+    public static Environment getEnvironment() {
         return Environment.INSTANCE;
     }
 
     /**
      * @return the machine host name
      */
-    public static final String getHostName() {
+    public static String getHostName() {
         return HOST_NAME;
     }
 
     /**
      * @return the hosts ip address
      */
-    public static final String getHostAddress() {
+    public static String getHostAddress() {
         return HOST_ADDRESS;
     }
 
     /**
      * @return the hosts mach address
      */
-    public static final String getMachAddress() {
+    public static String getMachAddress() {
         return MACH_ADDRESS;
     }
 
     /**
      * @return the CPU details
      */
-    public static final String getCPUIsa() {
+    public static String getCPUIsa() {
         return CPU_ISA;
     }
 
     /**
      * @return summary of host details
      */
-    public static final String getHostSummary() {
+    public static String getHostSummary() {
         return "{\"name\":\"" + Environments.getHostName() + "\",\"CPU\":\"" + CPU_ISA //$NON-NLS-1$ //$NON-NLS-2$
                 + "\"}"; //$NON-NLS-1$
     }
@@ -152,35 +149,35 @@ public final class Environments {
     /**
      * @return java vendor
      */
-    public static final String getJavaVendor() {
+    public static String getJavaVendor() {
         return JAVA_VENDOR;
     }
 
     /**
      * @return java version
      */
-    public static final String getJavaVersion() {
+    public static String getJavaVersion() {
         return JAVA_VERSION;
     }
 
     /**
      * @return java version
      */
-    public static final String getJavaArch() {
+    public static String getJavaArch() {
         return JAVA_ARCH;
     }
 
     /**
      * @return java home
      */
-    public static final String getJavaHome() {
+    public static String getJavaHome() {
         return JAVA_HOME;
     }
 
     /**
      * @return summary of java details
      */
-    public static final String getJavaSummary() {
+    public static String getJavaSummary() {
         return "Java [vendor:" + JAVA_VENDOR + ", version:" + JAVA_VERSION //$NON-NLS-1$ //$NON-NLS-2$
                 + JAVA_ARCH + ", home:" + JAVA_HOME + "]"; //$NON-NLS-1$ //$NON-NLS-2$
     }
@@ -188,35 +185,35 @@ public final class Environments {
     /**
      * @return user name
      */
-    public static final String getUserName() {
+    public static String getUserName() {
         return USER_NAME;
     }
 
     /**
      * @return user home dir
      */
-    public static final String getUserHome() {
+    public static String getUserHome() {
         return USER_HOME;
     }
 
     /**
      * @return user country
      */
-    public static final String getUserCountry() {
+    public static String getUserCountry() {
         return USER_COUNTRY;
     }
 
     /**
      * @return user language
      */
-    public static final String getUserLanguage() {
+    public static String getUserLanguage() {
         return USER_LANGUAGE;
     }
 
     /**
      * @return summary of user details
      */
-    public static final String getUserSummary() {
+    public static String getUserSummary() {
         return "user [name:" + USER_NAME + ", country:" + USER_COUNTRY //$NON-NLS-1$ //$NON-NLS-2$
                 + ", lang:" + USER_LANGUAGE + ", home:" + USER_HOME + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     }
@@ -224,44 +221,44 @@ public final class Environments {
     /**
      * @return the operating system name
      */
-    public static final String getOSName() {
+    public static String getOSName() {
         return OS_NAME;
     }
 
     /**
-     * @return the operating system verison
+     * @return the operating system version
      */
-    public static final String getOSVersion() {
+    public static String getOSVersion() {
         return OS_VERSION;
     }
 
     /**
      * @return the operating system architecture
      */
-    public static final String getOSArch() {
+    public static String getOSArch() {
         return OS_ARCH;
     }
 
     /**
      * @return a summary of os details
      */
-    public static final String getOSSummary() {
+    public static String getOSSummary() {
         return "os [name:" + OS_NAME + ", version:" + OS_VERSION + ", arch:" //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 + OS_ARCH + "]"; //$NON-NLS-1$
     }
 
     /**
-     * @param date
+     * @param date the {@link java.util.Date} to convert to a string
      * @return the date as an ISO formatted string
      */
-    public static final String toISO8601String(Date date) {
+    public static String toISO8601String(Date date) {
         return IOS8601_DATE_FORMATTER.format(date);
     }
 
     /**
      * @return a summary of the detected Environments.
      */
-    public static final String getSummary() {
+    public static String getSummary() {
         return getHostSummary() + "\n" + getJavaSummary() + "\n" //$NON-NLS-1$ //$NON-NLS-2$
                 + getUserSummary() + "\n" + getOSSummary(); //$NON-NLS-1$
     }

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.resources;
 
 import javax.ws.rs.core.MediaType;

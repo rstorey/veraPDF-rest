@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.resources;
 
 import java.io.ByteArrayInputStream;
@@ -13,7 +10,7 @@ import java.io.OutputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -67,7 +64,7 @@ public class ValidateResource {
 	private static final String SHA1_NAME = "SHA-1"; //$NON-NLS-1$
 	private static final String AUTODETECT_PROFILE = "auto";
 	private static final String WIKI_URL_BASE = "https://github.com/veraPDF/veraPDF-validation-profiles/wiki/"; //$NON-NLS-1$
-	{
+	static {
 		VeraGreenfieldFoundryProvider.initialise();
 	}
 
@@ -80,9 +77,11 @@ public class ValidateResource {
 	 * @param uploadedInputStream
 	 *            a {@link java.io.InputStream} to the PDF to be validated
 	 * @param contentDispositionHeader
+	 * 			  the {@link org.glassfish.jersey.media.multipart.FormDataContentDisposition}
 	 * @return the {@link org.verapdf.pdfa.results.ValidationResult} obtained
 	 *         when validating the uploaded stream against the selected profile.
 	 * @throws VeraPDFException
+	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
 	@POST
 	@Path("/{profileId}")
@@ -98,6 +97,7 @@ public class ValidateResource {
 
 	}
 
+
 	/**
 	 * @param profileId
 	 *            the String id of the Validation profile (auto, 1b, 1a, 2b, 2a, 2u,
@@ -107,8 +107,10 @@ public class ValidateResource {
 	 * @param uploadedInputStream
 	 *            a {@link java.io.InputStream} to the PDF to be validated
 	 * @param contentDispositionHeader
-	 * @return
+	 * 			  the {@link org.glassfish.jersey.media.multipart.FormDataContentDisposition}
+	 * @return an {@link java.io.InputStream} of HTML with validation report results
 	 * @throws VeraPDFException
+	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
 	@POST
 	@Path("/{profileId}")
@@ -126,11 +128,11 @@ public class ValidateResource {
 		} catch (IOException exception) {
 			throw new VeraPDFException("IOException creating a temp file", exception); //$NON-NLS-1$
 		}
-		try (OutputStream fos = new FileOutputStream(file);) {
+		try (OutputStream fos = new FileOutputStream(file)) {
 			IOUtils.copy(uploadedInputStream, fos);
 			uploadedInputStream.close();
-		} catch (IOException excep) {
-			throw new VeraPDFException("IOException creating a temp file", excep); //$NON-NLS-1$
+		} catch (IOException exception) {
+			throw new VeraPDFException("IOException creating a temp file", exception); //$NON-NLS-1$
 		}
 
 
@@ -145,7 +147,6 @@ public class ValidateResource {
 			htmlBytes = getHtmlBytes(xmlBos.toByteArray(), summary);
 		} catch (IOException | TransformerException exception) {
 			throw new VeraPDFException("Some Java Exception while validating", exception); //$NON-NLS-1$
-			// TODO Auto-generated catch block
 		}
 		return new ByteArrayInputStream(htmlBytes);
 	}
@@ -162,6 +163,7 @@ public class ValidateResource {
      * @return the {@link org.verapdf.pdfa.results.ValidationResult} obtained
      *         when validating the uploaded stream against the selected profile.
      * @throws VeraPDFException
+	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
      */
     @PUT
     @Path("/{profileId}")
@@ -191,17 +193,17 @@ public class ValidateResource {
             try (PDFAParser toValidate = Foundries.defaultInstance().createParser(dis, flavour)) {
                 PDFAValidator validator = ValidatorFactory.createValidator(flavour, false);
                 result = validator.validate(toValidate);
-            } catch (ModelParsingException mpExcep) {
+            } catch (ModelParsingException mpException) {
                 // If we have the same sha-1 then it's a PDF Box parse error, so
                 // treat as non PDF.
                 if(sha1Hex!=null) {
                     if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
                      throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
                             .type(MediaType.TEXT_PLAIN).entity("File does not appear " +
-                                     "to be a PDF.").build(), mpExcep); //$NON-NLS-1$
+                                     "to be a PDF.").build(), mpException); //$NON-NLS-1$
                     }
                 }
-                throw mpExcep;
+                throw mpException;
             } catch (IOException exception) {
                 exception.printStackTrace();
             }
@@ -209,15 +211,15 @@ public class ValidateResource {
             try (PDFAParser parser = Foundries.defaultInstance().createParser(dis)) {
                 PDFAValidator validator = Foundries.defaultInstance().createValidator(parser.getFlavour(), false);
                 result = validator.validate(parser);
-            } catch (ModelParsingException mpExcep) {
+            } catch (ModelParsingException mpException) {
                 // If we have the same sha-1 then it's a PDF Box parse error, so
                 // treat as non PDF.
                 if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
                     throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
                             .type(MediaType.TEXT_PLAIN).entity("File does not appear " +
-                                    "to be a PDF.").build(), mpExcep); //$NON-NLS-1$
+                                    "to be a PDF.").build(), mpException); //$NON-NLS-1$
                 }
-                throw mpExcep;
+                throw mpException;
             } catch (IOException exception) {
                 exception.printStackTrace();
             }
@@ -254,12 +256,13 @@ public class ValidateResource {
 
 	private static BatchSummary processFile(File file, ProcessorConfig config, OutputStream mrrStream)
 			throws VeraPDFException {
-		List<File> files = Arrays.asList(file);
-		BatchSummary summary = null;
+		List<File> files = Collections.singletonList(file);
+		BatchSummary summary;
 		try (BatchProcessor processor = ProcessorFactory.fileBatchProcessor(config)) {
 			summary = processor.process(files,
 					ProcessorFactory.getHandler(FormatOption.MRR, false, mrrStream, 100, false));
-		} catch (IOException exception) {
+		} catch(IOException exception) {
+			throw new VeraPDFException("IO Exception while processing files", exception); //$NON-NLS-1$
 		}
 		return summary;
 	}

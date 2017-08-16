@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.resources;
 
 import java.util.HashSet;
@@ -81,7 +78,7 @@ public class ProfileResource {
 	 *            the String id of the Validation profile (1b, 1a, 2b, 2a, 2u,
 	 *            3b, 3a, or 3u)
 	 * @return the {@link java.util.Set} of
-	 *         {@link org.verapdf.pdfa.validation.RuleId}s for the selected
+	 *         {@link org.verapdf.pdfa.validation.profiles.RuleId}s for the selected
 	 *         Validation Profile
 	 */
 	@GET
@@ -103,7 +100,7 @@ public class ProfileResource {
 	 *            a {@link java.lang.String} identifying the profile clause to
 	 *            return the Rules for
 	 * @return the {@link java.util.Set} of
-	 *         {@link org.verapdf.pdfa.validation.Rule}s for the selected
+	 *         {@link org.verapdf.pdfa.validation.profiles.Rule}s for the selected
 	 *         profile and clause
 	 */
 	@GET

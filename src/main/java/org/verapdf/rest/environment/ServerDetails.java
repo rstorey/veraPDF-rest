@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.verapdf.rest.environment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +24,7 @@ public class ServerDetails {
 	/**
 	 * @return the server details instance
 	 */
-	public static final ServerDetails getInstance() {
+	public static ServerDetails getInstance() {
 		return INSTANCE;
 	}
 	
