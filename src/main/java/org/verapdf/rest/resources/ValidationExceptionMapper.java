@@ -18,8 +18,8 @@ public final class ValidationExceptionMapper implements ExceptionMapper<Validati
         StringBuilder builder = new StringBuilder();
         builder.append(exception.getMessage());
         if (exception.getStackTrace().length > 0) {
-            StackTraceElement trace = exception.getStackTrace()[0];            
-            builder.append(" at " + trace.getClassName() + "." + trace.getMethodName() + "(" + trace.getFileName() + ":" + trace.getLineNumber() + ")");  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+            StackTraceElement trace = exception.getStackTrace()[0];
+            builder.append(" at ").append(trace.getClassName()).append(".").append(trace.getMethodName()).append("(").append(trace.getFileName()).append(":").append(trace.getLineNumber()).append(")");  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
         }
         return Response.status(Status.INTERNAL_SERVER_ERROR).entity(builder.toString()).type(MediaType.TEXT_PLAIN).build();
     }

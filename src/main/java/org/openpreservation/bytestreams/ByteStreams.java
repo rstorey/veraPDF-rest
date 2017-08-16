@@ -28,8 +28,8 @@ import org.apache.commons.codec.binary.Hex;
 
 public final class ByteStreams {
     /** The length of a valid hex encoded SHA1 digest string */
-    public static final int HEX_SHA1_LENGTH = 40;
-    static final String HEX_REGEX_ROOT = "^\\s*([0-9a-fA-F]"; //$NON-NLS-1$
+    private static final int HEX_SHA1_LENGTH = 40;
+    private static final String HEX_REGEX_ROOT = "^\\s*([0-9a-fA-F]"; //$NON-NLS-1$
     /** RegEx for a SHA1 digest string */
     public static final String HEX_SHA1_REGEX = HEX_REGEX_ROOT + "{" //$NON-NLS-1$
             + HEX_SHA1_LENGTH + "})\\z"; //$NON-NLS-1$
@@ -37,8 +37,6 @@ public final class ByteStreams {
     public static final String NULL_SHA1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"; //$NON-NLS-1$
     /** Length given to a byte stream when its length is unknown */
     public static final long UNKNOWN_LENGTH = -1;
-    static final NullPointerException DEFAULT_CAUSE = new NullPointerException(
-            "[ByteStream] is OK."); //$NON-NLS-1$
 
     // Buffer size for reading streams
     private static final int BUFFER_SIZE = (32 * 1024);
@@ -148,14 +146,13 @@ public final class ByteStreams {
      *             when the InputStream opened from the file cannot be read
      */
     public static ByteStreamId idFromFile(final File file)
-            throws FileNotFoundException, IOException {
+            throws IOException {
         if (file == null)
             throw new IllegalArgumentException("file == null"); //$NON-NLS-1$
         if (file.isDirectory())
             throw new IllegalArgumentException("file.isDirectory() == true"); //$NON-NLS-1$
         try (InputStream inStream = new FileInputStream(file)) {
-            ByteStreamId bs = idFromStream(inStream);
-            return bs;
+            return idFromStream(inStream);
         }
     }
 

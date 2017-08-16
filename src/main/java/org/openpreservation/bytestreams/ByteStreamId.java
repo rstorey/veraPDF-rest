@@ -22,18 +22,18 @@ public interface ByteStreamId {
 	/**
 	 * @return The length of the ByteStream in bytes, will be >= 0.
 	 */
-	public long getLength();
+	long getLength();
 
 	/**
 	 * @return The hex encoded SHA1 digest calculated from the ByteStream, a
 	 *         40 character hex string, i.e. [0-9a-f]{40}.
 	 */
-	public String getHexSHA1();
+	String getHexSHA1();
 
 	/**
 	 * @param id
 	 *            id for comparison
 	 * @return -1 if the item less than id, 0 if equal, 1 if greater
 	 */
-	public int compareTo(final ByteStreamId id);
+	int compareTo(final ByteStreamId id);
 }

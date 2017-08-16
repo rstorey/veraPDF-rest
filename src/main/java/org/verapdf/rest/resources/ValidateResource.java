@@ -230,12 +230,12 @@ public class ValidateResource {
 	private static MessageDigest getDigest() {
 		try {
 			return MessageDigest.getInstance(SHA1_NAME);
-		} catch (NoSuchAlgorithmException nsaExcep) {
+		} catch (NoSuchAlgorithmException nsaException) {
 			// If this happens the Java Digest algorithms aren't present, a
 			// faulty Java install??
 			throw new IllegalStateException(
 					"No digest algorithm implementation for " +
-                            SHA1_NAME + ", check you Java installation.", nsaExcep); //$NON-NLS-1$ //$NON-NLS-2$
+                            SHA1_NAME + ", check you Java installation.", nsaException); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 

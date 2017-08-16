@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>.</p>
  */
-public class VeraPdfRestConfiguration extends Configuration {
+class VeraPdfRestConfiguration extends Configuration {
     //
     // FIXME: This isn't mapping to the port option from the config
     //

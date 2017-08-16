@@ -5,7 +5,8 @@ $(document).on('change', '.btn-file :file', function() {
   rusha = new Rusha(),
   file = input.get(0).files[0],
   reader = new FileReader();
-  reader.onload = function(e) {
+  // noinspection UnterminatedStatementJS
+    reader.onload = function(e) {
     var rawData = reader.result;
     var digest = rusha.digest(rawData);
     input.trigger('fileselect', [numFiles, label, digest]);

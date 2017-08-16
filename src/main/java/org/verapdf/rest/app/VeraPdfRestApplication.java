@@ -23,7 +23,7 @@ import io.dropwizard.views.ViewBundle;
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>
  *
  */
-public class VeraPdfRestApplication extends Application<VeraPdfRestConfiguration> {
+class VeraPdfRestApplication extends Application<VeraPdfRestConfiguration> {
 
     private static final String NAME = "verapdf-rest"; //$NON-NLS-1$
 

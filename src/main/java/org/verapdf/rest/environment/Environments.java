@@ -23,37 +23,37 @@ import java.util.Date;
 
 @SuppressWarnings("boxing")
 public final class Environments {
-    static final String JAVA_CPU_ISA_PROP = "sun.cpu.isalist"; //$NON-NLS-1$
-    static final String JAVA_ARCH_PROP = "sun.arch.data.model"; //$NON-NLS-1$
-    static final String JAVA_PROP_ROOT = "java"; //$NON-NLS-1$
-    static final String JAVA_VM_PROP_ROOT = JAVA_PROP_ROOT + ".vm"; //$NON-NLS-1$
-    static final String JAVA_HOME_PROP = JAVA_PROP_ROOT + ".home"; //$NON-NLS-1$
-    static final String JAVA_VM_VENDOR_PROP = JAVA_VM_PROP_ROOT + ".vendor"; //$NON-NLS-1$
-    static final String JAVA_VERSION_PROP = JAVA_PROP_ROOT + ".version"; //$NON-NLS-1$
-    static final String USER_PROP_ROOT = "user"; //$NON-NLS-1$
-    static final String USER_NAME_PROP = USER_PROP_ROOT + ".name"; //$NON-NLS-1$
-    static final String USER_HOME_PROP = USER_PROP_ROOT + ".home"; //$NON-NLS-1$
-    static final String USER_COUNTRY_PROP = USER_PROP_ROOT + ".country"; //$NON-NLS-1$
-    static final String USER_LANGUAGE_PROP = USER_PROP_ROOT + ".language"; //$NON-NLS-1$
-    static final String OS_PROP_ROOT = "os"; //$NON-NLS-1$
-    static final String OS_NAME_PROP = OS_PROP_ROOT + ".name"; //$NON-NLS-1$
-    static final String OS_VERSION_PROP = OS_PROP_ROOT + ".version"; //$NON-NLS-1$
-    static final String OS_ARCH_PROP = OS_PROP_ROOT + ".arch"; //$NON-NLS-1$
-    static final String HOST_NAME;
-    static final String HOST_ADDRESS;
-    static final String MACH_ADDRESS;
-    static final String CPU_ISA;
-    static final String JAVA_ARCH;
-    static final String JAVA_HOME;
-    static final String JAVA_VENDOR;
-    static final String JAVA_VERSION;
-    static final String USER_NAME;
-    static final String USER_HOME;
-    static final String USER_COUNTRY;
-    static final String USER_LANGUAGE;
-    static final String OS_NAME;
-    static final String OS_VERSION;
-    static final String OS_ARCH;
+    private static final String JAVA_CPU_ISA_PROP = "sun.cpu.isalist"; //$NON-NLS-1$
+    private static final String JAVA_ARCH_PROP = "sun.arch.data.model"; //$NON-NLS-1$
+    private static final String JAVA_PROP_ROOT = "java"; //$NON-NLS-1$
+    private static final String JAVA_VM_PROP_ROOT = JAVA_PROP_ROOT + ".vm"; //$NON-NLS-1$
+    private static final String JAVA_HOME_PROP = JAVA_PROP_ROOT + ".home"; //$NON-NLS-1$
+    private static final String JAVA_VM_VENDOR_PROP = JAVA_VM_PROP_ROOT + ".vendor"; //$NON-NLS-1$
+    private static final String JAVA_VERSION_PROP = JAVA_PROP_ROOT + ".version"; //$NON-NLS-1$
+    private static final String USER_PROP_ROOT = "user"; //$NON-NLS-1$
+    private static final String USER_NAME_PROP = USER_PROP_ROOT + ".name"; //$NON-NLS-1$
+    private static final String USER_HOME_PROP = USER_PROP_ROOT + ".home"; //$NON-NLS-1$
+    private static final String USER_COUNTRY_PROP = USER_PROP_ROOT + ".country"; //$NON-NLS-1$
+    private static final String USER_LANGUAGE_PROP = USER_PROP_ROOT + ".language"; //$NON-NLS-1$
+    private static final String OS_PROP_ROOT = "os"; //$NON-NLS-1$
+    private static final String OS_NAME_PROP = OS_PROP_ROOT + ".name"; //$NON-NLS-1$
+    private static final String OS_VERSION_PROP = OS_PROP_ROOT + ".version"; //$NON-NLS-1$
+    private static final String OS_ARCH_PROP = OS_PROP_ROOT + ".arch"; //$NON-NLS-1$
+    private static final String HOST_NAME;
+    private static final String HOST_ADDRESS;
+    private static final String MACH_ADDRESS;
+    private static final String CPU_ISA;
+    private static final String JAVA_ARCH;
+    private static final String JAVA_HOME;
+    private static final String JAVA_VENDOR;
+    private static final String JAVA_VERSION;
+    private static final String USER_NAME;
+    private static final String USER_HOME;
+    private static final String USER_COUNTRY;
+    private static final String USER_LANGUAGE;
+    private static final String OS_NAME;
+    private static final String OS_VERSION;
+    private static final String OS_ARCH;
     static {
         try {
             InetAddress address = InetAddress.getLocalHost();
@@ -94,9 +94,9 @@ public final class Environments {
         }
     }
     /** ISO Date pattern for ISO 8601 Date */
-    static final String ISO8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss"; //$NON-NLS-1$
+    private static final String ISO8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss"; //$NON-NLS-1$
     /** {@link DateFormat} for ISO8601 date */
-    static DateFormat IOS8601_DATE_FORMATTER = new SimpleDateFormat(
+    private static final DateFormat IOS8601_DATE_FORMATTER = new SimpleDateFormat(
             ISO8601_DATE_PATTERN);
 
     private Environments() {
@@ -141,7 +141,7 @@ public final class Environments {
     /**
      * @return summary of host details
      */
-    public static String getHostSummary() {
+    private static String getHostSummary() {
         return "{\"name\":\"" + Environments.getHostName() + "\",\"CPU\":\"" + CPU_ISA //$NON-NLS-1$ //$NON-NLS-2$
                 + "\"}"; //$NON-NLS-1$
     }
@@ -177,7 +177,7 @@ public final class Environments {
     /**
      * @return summary of java details
      */
-    public static String getJavaSummary() {
+    private static String getJavaSummary() {
         return "Java [vendor:" + JAVA_VENDOR + ", version:" + JAVA_VERSION //$NON-NLS-1$ //$NON-NLS-2$
                 + JAVA_ARCH + ", home:" + JAVA_HOME + "]"; //$NON-NLS-1$ //$NON-NLS-2$
     }
@@ -213,7 +213,7 @@ public final class Environments {
     /**
      * @return summary of user details
      */
-    public static String getUserSummary() {
+    private static String getUserSummary() {
         return "user [name:" + USER_NAME + ", country:" + USER_COUNTRY //$NON-NLS-1$ //$NON-NLS-2$
                 + ", lang:" + USER_LANGUAGE + ", home:" + USER_HOME + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     }
@@ -242,7 +242,7 @@ public final class Environments {
     /**
      * @return a summary of os details
      */
-    public static String getOSSummary() {
+    private static String getOSSummary() {
         return "os [name:" + OS_NAME + ", version:" + OS_VERSION + ", arch:" //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 + OS_ARCH + "]"; //$NON-NLS-1$
     }

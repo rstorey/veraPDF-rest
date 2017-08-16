@@ -16,7 +16,7 @@ body {
 }
 
 .jumbotron img {
-  padding: 0px;
+  padding: 0;
   float: left;
   width: 200px;
   margin: 20px 10px 0 0;
