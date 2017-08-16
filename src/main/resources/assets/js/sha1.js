@@ -294,7 +294,6 @@
             return hex(rawDigest(str).buffer);
         };
     }
-    ;
     // The low-level RushCore module provides the heart of Rusha,
     // a high-speed sha1 implementation working on an Int32Array heap.
     // At first glance, the implementation seems complicated, however
@@ -328,7 +327,6 @@
                     y2 = y1 << 30 | y1 >>> 2;
                     y1 = y0;
                     y0 = t0;
-                    ;
                     H[k + j >> 2] = t1;
                 }
                 for (j = k + 64 | 0; (j | 0) < (k + 80 | 0); j = j + 4 | 0) {
@@ -339,7 +337,6 @@
                     y2 = y1 << 30 | y1 >>> 2;
                     y1 = y0;
                     y0 = t0;
-                    ;
                     H[j >> 2] = t1;
                 }
                 for (j = k + 80 | 0; (j | 0) < (k + 160 | 0); j = j + 4 | 0) {
@@ -350,7 +347,6 @@
                     y2 = y1 << 30 | y1 >>> 2;
                     y1 = y0;
                     y0 = t0;
-                    ;
                     H[j >> 2] = t1;
                 }
                 for (j = k + 160 | 0; (j | 0) < (k + 240 | 0); j = j + 4 | 0) {
@@ -361,7 +357,6 @@
                     y2 = y1 << 30 | y1 >>> 2;
                     y1 = y0;
                     y0 = t0;
-                    ;
                     H[j >> 2] = t1;
                 }
                 for (j = k + 240 | 0; (j | 0) < (k + 320 | 0); j = j + 4 | 0) {
@@ -372,7 +367,6 @@
                     y2 = y1 << 30 | y1 >>> 2;
                     y1 = y0;
                     y0 = t0;
-                    ;
                     H[j >> 2] = t1;
                 }
                 y0 = y0 + z0 | 0;

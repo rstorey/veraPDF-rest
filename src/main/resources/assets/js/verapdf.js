@@ -97,7 +97,7 @@ function changeFlavour(newFlavour) {
   flavour = newFlavour;
 }
 
-var outputFormat = "html"
+var outputFormat = "html";
 
 function changeOutputFormat(newFormat) {
   outputFormat = newFormat;
