@@ -7,12 +7,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.NotSupportedException;
@@ -44,6 +47,8 @@ import org.verapdf.pdfa.VeraGreenfieldFoundryProvider;
 import org.verapdf.pdfa.flavours.PDFAFlavour;
 import org.verapdf.pdfa.results.ValidationResult;
 import org.verapdf.pdfa.results.ValidationResults;
+import org.verapdf.features.FeatureExtractorConfig;
+import org.verapdf.metadata.fixer.MetadataFixerConfig;
 import org.verapdf.pdfa.validation.validators.ValidatorConfig;
 import org.verapdf.pdfa.validation.validators.ValidatorFactory;
 import org.verapdf.processor.BatchProcessor;
@@ -55,15 +60,24 @@ import org.verapdf.processor.plugins.PluginsCollectionConfig;
 import org.verapdf.processor.reports.BatchSummary;
 import org.verapdf.report.HTMLReport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>
+ * @author <a href="mailto:rstorey@loc.gov">Rosie Storey</a>
  */
 public class ValidateResource {
 	// java.security.digest name for the SHA-1 algorithm
 	private static final String SHA1_NAME = "SHA-1"; //$NON-NLS-1$
-	private static final String AUTODETECT_PROFILE = "auto";
+	private static final String AUTODETECT_PROFILE = "auto"; //$NON-NLS-1$
 	private static final String WIKI_URL_BASE = "https://github.com/veraPDF/veraPDF-validation-profiles/wiki/"; //$NON-NLS-1$
+	private static final Boolean LOG_SUCCESS_CHECKS = false;
+	private static final int MAX_FAILED_CHECKS_PER_RULE = 100;
+	private static final Boolean VERBOSE_OUTPUT = false;
+	private static final String TEMP_FILE_PREFIX = "veraPDF-cache-"; //$NON-NLS-1$
+	private static final String TEMP_FILE_SUFFIX = ".pdf";
+	private static final Logger LOGGER = LoggerFactory.getLogger(ValidateResource.class);
 	static {
 		VeraGreenfieldFoundryProvider.initialise();
 	}
@@ -93,10 +107,57 @@ public class ValidateResource {
 			                                    @FormDataParam("file") final FormDataContentDisposition contentDispositionHeader)
             throws VeraPDFException {
 
+		LOGGER.info("Received a POST validate request for profileId: {} with sha1Hex: {}", profileId, sha1Hex);
 	    return validate(profileId, sha1Hex, uploadedInputStream);
 
 	}
 
+	/**
+	 * @param directoryPath
+	 * 			  the String of a path on the local disk with PDFs to validate
+	 * @return an {@link java.io.InputStream} of HTML with validation report results
+	 * @throws VeraPDFException
+	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
+	 */
+	@POST
+	@Path("/processFiles")
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	@Produces({ MediaType.TEXT_HTML })
+	public static InputStream processFilesPost(@FormDataParam("directoryPath") String directoryPath)
+			throws VeraPDFException {
+
+		LOGGER.info("Received a POST processFiles request with directoryPath: {}", directoryPath);
+		return validateFilePath(directoryPath);
+	}
+
+	/**
+	 * @param profileId
+	 *            the String id of the Validation profile (auto, 1b, 1a, 2b, 2a, 2u,
+	 *            3b, 3a, or 3u)
+	 * @param headers
+	 *         the {@link javax.ws.rs.core.HttpHeaders} context of this request
+	 * @param inFile
+	 *            byte array of the PDF to be validated
+	 * @return the {@link org.verapdf.pdfa.results.ValidationResult} obtained
+	 *         when validating the uploaded stream against the selected profile.
+	 * @throws VeraPDFException
+	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
+	 */
+	@PUT
+	@Path("/{profileId}")
+	@Consumes( MediaType.WILDCARD)
+	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+	public static ValidationResult validatePut(@PathParam("profileId") String profileId,
+											   @Context HttpHeaders headers,
+											   byte[] inFile)
+			throws VeraPDFException {
+
+		LOGGER.info("Received a PUT validate request for profileId: {}", profileId);
+		InputStream fileInputStream = new ByteArrayInputStream(inFile);
+
+		return validate(profileId, null, fileInputStream);
+
+	}
 
 	/**
 	 * @param profileId
@@ -123,147 +184,201 @@ public class ValidateResource {
                                                 throws VeraPDFException {
 
 		File file;
+		List<File> files;
+		FileInputStream flavourDetectStream;
+
+		PDFAFlavour flavour;
+		PDFAParser parser;
+
+		ValidatorConfig validatorConfig;
+		ProcessorConfig processorConfig;
+
+		LOGGER.info("Received a POST validate HTML request with profileId:{} sha1Hex: {}", profileId, sha1Hex);
+
+		LOGGER.trace("Saving uploaded file to temp file on local disk");
+		file = saveUploadedFileToTemp(uploadedInputStream);
+
+		if(!profileId.equals(AUTODETECT_PROFILE)) {
+			LOGGER.trace("ProfileId is not auto-detect");
+			flavour = PDFAFlavour.byFlavourId(profileId);
+		} else {
+			LOGGER.trace("Auto-detecting profile");
+			try {
+				flavourDetectStream = new FileInputStream(file);
+				parser = Foundries.defaultInstance().createParser(flavourDetectStream);
+				flavour = parser.getFlavour();
+				LOGGER.trace("Profile type {} was auto-detected", flavour.toString());
+
+			} catch(FileNotFoundException exception) {
+				throw new VeraPDFException("Problem detecting profile from uploaded file", exception);
+			}
+		}
+
 		try {
-			file = File.createTempFile("cache", "");
-		} catch (IOException exception) {
-			throw new VeraPDFException("IOException creating a temp file", exception); //$NON-NLS-1$
-		}
-		try (OutputStream fos = new FileOutputStream(file)) {
-			IOUtils.copy(uploadedInputStream, fos);
 			uploadedInputStream.close();
+		} catch(IOException exception) {
+			throw new VeraPDFException("An exception occurred reading the uploaded file", exception);
+		}
+
+		LOGGER.trace("Creating validation configuration with flavour {}, LOG_SUCCESS_CHECKS {}, " +
+						"MAX_FAILED_CHECKS_PER_RULE {}", flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
+		validatorConfig = ValidatorFactory.createConfig(flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
+		LOGGER.trace("Creating processor config with default values");
+		processorConfig = ProcessorFactory.fromValues(validatorConfig, FeatureFactory.defaultConfig(),
+				PluginsCollectionConfig.defaultConfig(), FixerFactory.defaultConfig(), getTasks());
+
+		files = Collections.singletonList(file);
+
+		LOGGER.trace("Validating and preparing HTML report for {} files", files.size());
+		return processFilesCreateHtmlReport(files, processorConfig);
+	}
+
+	/*
+		Save the file which was uploaded through http(s) to a temp location on the local disk.
+	 */
+	private static File saveUploadedFileToTemp(InputStream uploadedInputStream) throws VeraPDFException {
+		File file;
+
+		try {
+			LOGGER.trace("Creating a temp file with prefix {} and suffix {}", TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
+			file = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
 		} catch (IOException exception) {
 			throw new VeraPDFException("IOException creating a temp file", exception); //$NON-NLS-1$
 		}
 
+		try (OutputStream fos = new FileOutputStream(file)) {
+			LOGGER.trace("Copying the uploadedInputStream to the newly created temp file with name {}",
+					file.getAbsoluteFile());
+			IOUtils.copy(uploadedInputStream, fos);
+		} catch (IOException exception) {
+			throw new VeraPDFException("IOException writing to temp file", exception); //$NON-NLS-1$
+		}
 
-        PDFAFlavour flavour = PDFAFlavour.byFlavourId(profileId);
-        ValidatorConfig validConf = ValidatorFactory.createConfig(flavour, false, 100);
-        ProcessorConfig config = createValidateConfig(validConf);
+		return file;
+	}
 
+	private static ByteArrayInputStream processFilesCreateHtmlReport(List<File> files, ProcessorConfig processorConfig)
+		throws VeraPDFException {
+
+		BatchProcessor processor;
+		BatchSummary summary;
 
 		byte[] htmlBytes;
-        try (ByteArrayOutputStream xmlBos = new ByteArrayOutputStream()) {
-			BatchSummary summary = processFile(file, config, xmlBos);
-			htmlBytes = getHtmlBytes(xmlBos.toByteArray(), summary);
+		InputStream xmlBis;
+		ByteArrayOutputStream htmlBos;
+
+		try (ByteArrayOutputStream xmlBos = new ByteArrayOutputStream()) {
+			processor = ProcessorFactory.fileBatchProcessor(processorConfig);
+			summary = processor.process(files,
+					ProcessorFactory.getHandler(FormatOption.MRR, VERBOSE_OUTPUT, xmlBos,
+							MAX_FAILED_CHECKS_PER_RULE, LOG_SUCCESS_CHECKS));
+
+			xmlBis = new ByteArrayInputStream(xmlBos.toByteArray());
+			htmlBos = new ByteArrayOutputStream();
+			HTMLReport.writeHTMLReport(xmlBis, htmlBos, summary, WIKI_URL_BASE, VERBOSE_OUTPUT);
+			htmlBytes = htmlBos.toByteArray();
+
 		} catch (IOException | TransformerException exception) {
-			throw new VeraPDFException("Some Java Exception while validating", exception); //$NON-NLS-1$
+			throw new VeraPDFException("An exception occurred while validating", exception); //$NON-NLS-1$
 		}
+
 		return new ByteArrayInputStream(htmlBytes);
 	}
 
 
-    /**
-     * @param profileId
-     *            the String id of the Validation profile (auto, 1b, 1a, 2b, 2a, 2u,
-     *            3b, 3a, or 3u)
-     * @param headers
-     *         the {@link javax.ws.rs.core.HttpHeaders} context of this request
-     * @param inFile
-     *            byte array of the PDF to be validated
-     * @return the {@link org.verapdf.pdfa.results.ValidationResult} obtained
-     *         when validating the uploaded stream against the selected profile.
-     * @throws VeraPDFException
-	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
-     */
-    @PUT
-    @Path("/{profileId}")
-    @Consumes( MediaType.WILDCARD)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    public static ValidationResult validatePut(@PathParam("profileId") String profileId,
-                                               @Context HttpHeaders headers,
-                                               byte[] inFile)
-            throws VeraPDFException {
-
-        InputStream fileInputStream = new ByteArrayInputStream(inFile);
-
-        return validate(profileId, null, fileInputStream);
-
-    }
-
-
+	/*
+	This method is used for PUT and POST non-HTML-based validation of a single uploaded file.
+	Sha1 for the uploaded file may be provided or may be null.
+	The profile validation flavour may be specified or may be auto-detect.
+	 */
     private static ValidationResult validate(String profileId, String sha1Hex,
                                         InputStream uploadedInputStream)
             throws VeraPDFException {
-        MessageDigest sha1 = getDigest();
-        DigestInputStream dis = new DigestInputStream(uploadedInputStream, sha1);
-        ValidationResult result = ValidationResults.defaultResult();
 
-        if(!profileId.equals(AUTODETECT_PROFILE)) {
-            PDFAFlavour flavour = PDFAFlavour.byFlavourId(profileId);
-            try (PDFAParser toValidate = Foundries.defaultInstance().createParser(dis, flavour)) {
-                PDFAValidator validator = ValidatorFactory.createValidator(flavour, false);
-                result = validator.validate(toValidate);
-            } catch (ModelParsingException mpException) {
-                // If we have the same sha-1 then it's a PDF Box parse error, so
-                // treat as non PDF.
-                if(sha1Hex!=null) {
-                    if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
-                     throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
-                            .type(MediaType.TEXT_PLAIN).entity("File does not appear " +
-                                     "to be a PDF.").build(), mpException); //$NON-NLS-1$
-                    }
-                }
-                throw mpException;
-            } catch (IOException exception) {
-                exception.printStackTrace();
-            }
-        } else {
-            try (PDFAParser parser = Foundries.defaultInstance().createParser(dis)) {
-                PDFAValidator validator = Foundries.defaultInstance().createValidator(parser.getFlavour(), false);
-                result = validator.validate(parser);
-            } catch (ModelParsingException mpException) {
-                // If we have the same sha-1 then it's a PDF Box parse error, so
-                // treat as non PDF.
-                if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
-                    throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
-                            .type(MediaType.TEXT_PLAIN).entity("File does not appear " +
-                                    "to be a PDF.").build(), mpException); //$NON-NLS-1$
-                }
-                throw mpException;
-            } catch (IOException exception) {
-                exception.printStackTrace();
-            }
-        }
+    	/* Perform our own calculation of the sha-1 of the uploaded file */
+        MessageDigest sha1 = getDigest();
+        DigestInputStream digestInputStream = new DigestInputStream(uploadedInputStream, sha1);
+
+        ValidationResult result;
+        PDFAFlavour flavour;
+        PDFAParser parser;
+        PDFAValidator validator;
+
+		try {
+			result = ValidationResults.defaultResult();
+
+			if(!profileId.equals(AUTODETECT_PROFILE)) {
+				/* Use the specified profile flavour for validation */
+				flavour = PDFAFlavour.byFlavourId(profileId);
+				parser = Foundries.defaultInstance().createParser(digestInputStream, flavour);
+			} else {
+				/* Don't specify a profile flavour for validation - use veraPDF to autodetect the profile */
+				parser = Foundries.defaultInstance().createParser(digestInputStream);
+				flavour = parser.getFlavour();
+			}
+
+			validator = ValidatorFactory.createValidator(flavour, LOG_SUCCESS_CHECKS);
+			result = validator.validate(parser);
+		} catch (ModelParsingException mpException) {
+			/*
+			If we have the same sha-1 then it's a PDF parse error, so
+			treat as non PDF.
+			*/
+			if(sha1Hex!=null) {
+				if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
+				 throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
+						.type(MediaType.TEXT_PLAIN).entity("File does not appear " +
+								 "to be a PDF.").build(), mpException); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+			}
+			throw mpException;
+		}
+
         return result;
     }
 
 	private static MessageDigest getDigest() {
 		try {
 			return MessageDigest.getInstance(SHA1_NAME);
-		} catch (NoSuchAlgorithmException nsaExcep) {
+		} catch (NoSuchAlgorithmException nsaException) {
 			// If this happens the Java Digest algorithms aren't present, a
 			// faulty Java install??
 			throw new IllegalStateException(
 					"No digest algorithm implementation for " +
-                            SHA1_NAME + ", check you Java installation.", nsaExcep); //$NON-NLS-1$ //$NON-NLS-2$
+                            SHA1_NAME + ", check your Java installation.", nsaException); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
-	private static byte[] getHtmlBytes(byte[] xmlBytes, BatchSummary summary)
-            throws IOException, TransformerException {
-		try (InputStream xmlBis = new ByteArrayInputStream(xmlBytes);
-				ByteArrayOutputStream htmlBos = new ByteArrayOutputStream()) {
-			HTMLReport.writeHTMLReport(xmlBis, htmlBos, summary, WIKI_URL_BASE, false);
-			return htmlBos.toByteArray();
-		}
-
+	private static EnumSet getTasks() {
+		EnumSet tasks = EnumSet.noneOf(TaskType.class);
+		tasks.add(TaskType.VALIDATE);
+//		tasks.add(TaskType.EXTRACT_FEATURES);
+//		tasks.add(TaskType.FIX_METADATA);
+		return tasks;
 	}
 
-	private static ProcessorConfig createValidateConfig(ValidatorConfig validConf) {
-		return ProcessorFactory.fromValues(validConf, FeatureFactory.defaultConfig(),
-				PluginsCollectionConfig.defaultConfig(), FixerFactory.defaultConfig(), EnumSet.of(TaskType.VALIDATE));
+	private static InputStream validateFilePath(String filePath) throws VeraPDFException {
+
+		// Default validator config
+		ValidatorConfig validatorConfig = ValidatorFactory.defaultConfig();
+		// Default features config
+		FeatureExtractorConfig featureConfig = FeatureFactory.defaultConfig();
+		// Default plugins config
+		PluginsCollectionConfig pluginsConfig = PluginsCollectionConfig.defaultConfig();
+		// Default fixer config
+		MetadataFixerConfig fixerConfig = FixerFactory.defaultConfig();
+		// Tasks configuring
+
+		// Creating processor config
+		ProcessorConfig processorConfig = ProcessorFactory.fromValues(validatorConfig, featureConfig,
+				pluginsConfig, fixerConfig, getTasks());
+
+		List<File> files = new ArrayList<>();
+		files.add(new File(filePath));
+
+
+		return processFilesCreateHtmlReport(files, processorConfig);
 	}
 
-	private static BatchSummary processFile(File file, ProcessorConfig config, OutputStream mrrStream)
-			throws VeraPDFException {
-		List<File> files = Collections.singletonList(file);
-		BatchSummary summary;
-		try (BatchProcessor processor = ProcessorFactory.fileBatchProcessor(config)) {
-			summary = processor.process(files,
-					ProcessorFactory.getHandler(FormatOption.MRR, false, mrrStream, 100, false));
-		} catch(IOException exception) {
-			throw new VeraPDFException("IO Exception while processing files", exception); //$NON-NLS-1$
-		}
-		return summary;
-	}
+
 }

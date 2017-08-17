@@ -1,7 +1,18 @@
 server:
   applicationConnectors:
   - type: http 
-    port: 6000
+    port: 8080 
   adminConnectors:
   - type: http
-    port: 6001
+    port: 8081 
+
+logging:
+
+  level: INFO
+
+  loggers:
+    org.verapdf.rest.resources.ValidateResource: TRACE
+
+  appenders:
+    - type: console
+      target: stderr
