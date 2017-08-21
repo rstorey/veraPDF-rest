@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -350,7 +352,9 @@ public class ValidateResource {
 		return tasks;
 	}
 
+
 	private static InputStream validateFilePath(String filePath) throws VeraPDFException {
+		File directoryPath = new File(filePath);
 
 		// Default validator config
 		ValidatorConfig validatorConfig = ValidatorFactory.defaultConfig();
@@ -366,9 +370,17 @@ public class ValidateResource {
 		ProcessorConfig processorConfig = ProcessorFactory.fromValues(validatorConfig, featureConfig,
 				pluginsConfig, fixerConfig, getTasks());
 
+		// The specified filePath may either be a path to a single PDF or a path to a directory.
+		// If it is a directory, recursively list all PDF files (files having extension containing pdf)
+		// and run the processor on all of them.
 		List<File> files = new ArrayList<>();
-		files.add(new File(filePath));
-
+		if(directoryPath.isDirectory()) {
+			FileFilter fileFilter = new WildcardFileFilter("*.pdf*");
+			File[] pdfFiles = directoryPath.listFiles(fileFilter);
+			Collections.addAll(files, pdfFiles);
+		} else {
+			files.add(new File(filePath));
+		}
 
 		return processFilesCreateHtmlReport(files, processorConfig);
 	}
