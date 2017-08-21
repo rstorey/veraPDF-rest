@@ -17,14 +17,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.ArrayList;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.NotSupportedException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
+import javax.ws.rs.*;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -119,14 +113,13 @@ public class ValidateResource {
 	 * @throws VeraPDFException
 	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
-	@POST
+	@GET
 	@Path("/processFiles")
-	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces({ MediaType.TEXT_HTML })
-	public static InputStream processFilesPost(@FormDataParam("directoryPath") String directoryPath)
+	public static InputStream processFilesGet(@QueryParam("directoryPath") String directoryPath)
 			throws VeraPDFException {
 
-		LOGGER.info("Received a POST processFiles request with directoryPath: {}", directoryPath);
+		LOGGER.info("Received a GET processFiles request with directoryPath: {}", directoryPath);
 		return validateFilePath(directoryPath);
 	}
 
