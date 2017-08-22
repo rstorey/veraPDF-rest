@@ -1,11 +1,12 @@
 # See https://docs.docker.com/engine/userguide/eng-image/multistage-build/
 
+
 FROM maven as builder
 RUN mkdir /build
 WORKDIR /build
 RUN git clone https://github.com/rstorey/veraPDF-rest.git
-RUN git clone https://github.com/bfosupport/pdfa-testsuite.git /pdfa-testsuite
-RUN git clone https://github.com/veraPDF/veraPDF-corpus /verapdf-corpus
+RUN git clone https://github.com/bfosupport/pdfa-testsuite.git
+RUN git clone https://github.com/veraPDF/veraPDF-corpus
 RUN cd veraPDF-rest && git checkout integration && mvn clean package
 
 
@@ -24,6 +25,8 @@ USER verapdf-rest
 WORKDIR /opt/verapdf-rest
 
 COPY --from=builder /build/veraPDF-rest/target/verapdf-rest-${VERAPDF_REST_VERSION}.jar /opt/verapdf-rest/
+COPY --from=builder /build/pdfa-testsuite /opt/pdfa-testsuite
+COPY --from=builder /build/veraPDF-corpus /opt/veraPDF-corpus
 
 EXPOSE 8080
 ENTRYPOINT java -jar /opt/verapdf-rest/verapdf-rest-${VERAPDF_REST_VERSION}.jar server
