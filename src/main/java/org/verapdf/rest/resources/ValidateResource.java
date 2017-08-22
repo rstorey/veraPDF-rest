@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileFilter;
 
+import com.codahale.metrics.annotation.Timed;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.nio.file.Files;
@@ -69,6 +70,7 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>
  * @author <a href="mailto:rstorey@loc.gov">Rosie Storey</a>
  */
+@Timed
 public class ValidateResource {
 	// java.security.digest name for the SHA-1 algorithm
 	private static final String SHA1_NAME = "SHA-1"; //$NON-NLS-1$
