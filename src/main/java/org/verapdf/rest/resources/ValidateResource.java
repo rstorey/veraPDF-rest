@@ -10,7 +10,14 @@ import java.io.OutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileFilter;
+
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+
+import java.nio.file.Files;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.Paths;
+import java.nio.file.FileVisitResult;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +27,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 import javax.ws.rs.*;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -34,6 +40,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.verapdf.core.ModelParsingException;
 import org.verapdf.core.VeraPDFException;
+import org.verapdf.core.EncryptedPdfException;
 import org.verapdf.features.FeatureFactory;
 import org.verapdf.metadata.fixer.FixerFactory;
 import org.verapdf.pdfa.Foundries;
@@ -42,7 +49,6 @@ import org.verapdf.pdfa.PDFAValidator;
 import org.verapdf.pdfa.VeraGreenfieldFoundryProvider;
 import org.verapdf.pdfa.flavours.PDFAFlavour;
 import org.verapdf.pdfa.results.ValidationResult;
-import org.verapdf.pdfa.results.ValidationResults;
 import org.verapdf.features.FeatureExtractorConfig;
 import org.verapdf.metadata.fixer.MetadataFixerConfig;
 import org.verapdf.pdfa.validation.validators.ValidatorConfig;
@@ -181,12 +187,7 @@ public class ValidateResource {
 		File file;
 		List<File> files;
 		FileInputStream flavourDetectStream;
-
 		PDFAFlavour flavour;
-		PDFAParser parser;
-
-		ValidatorConfig validatorConfig;
-		ProcessorConfig processorConfig;
 
 		LOGGER.info("Received a POST validate HTML request with profileId:{} sha1Hex: {}", profileId, sha1Hex);
 
@@ -200,8 +201,7 @@ public class ValidateResource {
 			LOGGER.trace("Auto-detecting profile");
 			try {
 				flavourDetectStream = new FileInputStream(file);
-				parser = Foundries.defaultInstance().createParser(flavourDetectStream);
-				flavour = parser.getFlavour();
+				flavour = detectFlavour(flavourDetectStream);
 				LOGGER.trace("Profile type {} was auto-detected", flavour.toString());
 
 			} catch(FileNotFoundException exception) {
@@ -217,17 +217,11 @@ public class ValidateResource {
 			throw new VeraPDFException("An exception occurred reading the uploaded file", exception);
 		}
 
-		LOGGER.trace("Creating validation configuration with flavour {}, LOG_SUCCESS_CHECKS {}, " +
-						"MAX_FAILED_CHECKS_PER_RULE {}", flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
-		validatorConfig = ValidatorFactory.createConfig(flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
-		LOGGER.trace("Creating processor config with default values");
-		processorConfig = ProcessorFactory.fromValues(validatorConfig, FeatureFactory.defaultConfig(),
-				PluginsCollectionConfig.defaultConfig(), FixerFactory.defaultConfig(), getTasks());
 
 		files = Collections.singletonList(file);
 
 		LOGGER.trace("Validating and preparing HTML report for {} files", files.size());
-		return processFilesCreateHtmlReport(files, processorConfig);
+		return processFilesCreateHtmlReport(files, flavour);
 	}
 
 	/*
@@ -256,17 +250,18 @@ public class ValidateResource {
 		return file;
 	}
 
-	private static ByteArrayInputStream processFilesCreateHtmlReport(List<File> files, ProcessorConfig processorConfig)
+	private static ByteArrayInputStream processFilesCreateHtmlReport(List<File> files, PDFAFlavour flavour)
 		throws VeraPDFException {
 
 		BatchProcessor processor;
 		BatchSummary summary;
+        ProcessorConfig processorConfig = configureProcessor(flavour);
 
 		byte[] htmlBytes;
 		InputStream xmlBis;
 		ByteArrayOutputStream htmlBos;
 
-		LOGGER.trace("Processing " + files.size() + " files to create an HTML report");
+		LOGGER.trace("Processing {} files to create an HTML report", files.size());
 		try (ByteArrayOutputStream xmlBos = new ByteArrayOutputStream()) {
 			processor = ProcessorFactory.fileBatchProcessor(processorConfig);
 			summary = processor.process(files,
@@ -306,20 +301,18 @@ public class ValidateResource {
         PDFAValidator validator;
 
 		try {
-			result = ValidationResults.defaultResult();
 
 			if(!profileId.equals(AUTODETECT_PROFILE)) {
-				LOGGER.trace("Using specified profile flavour for validation " + profileId);
+				LOGGER.trace("Using specified profile flavour for validation {}", profileId);
 				/* Use the specified profile flavour for validation */
 				flavour = PDFAFlavour.byFlavourId(profileId);
-				parser = Foundries.defaultInstance().createParser(digestInputStream, flavour);
 			} else {
 				LOGGER.trace("Auto-detecting profile for uploaded input stream");
 				/* Don't specify a profile flavour for validation - use veraPDF to autodetect the profile */
-				parser = Foundries.defaultInstance().createParser(digestInputStream);
-				flavour = parser.getFlavour();
+				flavour = detectFlavour(digestInputStream);
 			}
 
+            parser = Foundries.defaultInstance().createParser(digestInputStream, flavour);
 			validator = ValidatorFactory.createValidator(flavour, LOG_SUCCESS_CHECKS);
 			result = validator.validate(parser);
 		} catch (ModelParsingException mpException) {
@@ -327,7 +320,7 @@ public class ValidateResource {
 			If we have the same sha-1 then it's a PDF parse error, so
 			treat as non PDF.
 			*/
-			LOGGER.error("Caught a model parsing exception during validation", mpException);
+            LOGGER.error("Caught a model parsing exception during validation", mpException);
 			if(sha1Hex!=null) {
 				if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
 					LOGGER.error("File does not appear to be a PDF");
@@ -346,58 +339,105 @@ public class ValidateResource {
 		try {
 			return MessageDigest.getInstance(SHA1_NAME);
 		} catch (NoSuchAlgorithmException nsaException) {
-			// If this happens the Java Digest algorithms aren't present, a
-			// faulty Java install??
-			LOGGER.error("No digest algorithm implementation for " + SHA1_NAME, nsaException);
+			LOGGER.error("No digest algorithm implementation for {}", SHA1_NAME, nsaException);
 			throw new IllegalStateException(
 					"No digest algorithm implementation for " +
                             SHA1_NAME, nsaException); //$NON-NLS-1$
 		}
 	}
 
-	private static EnumSet getTasks() {
-		EnumSet tasks = EnumSet.noneOf(TaskType.class);
-		tasks.add(TaskType.VALIDATE);
+	private static EnumSet<TaskType> getTasks() {
+		EnumSet<TaskType> tasks = EnumSet.noneOf(TaskType.class);
+        tasks.add(TaskType.VALIDATE);
 //		tasks.add(TaskType.EXTRACT_FEATURES);
 //		tasks.add(TaskType.FIX_METADATA);
 		return tasks;
 	}
 
+	private static ProcessorConfig configureProcessor(PDFAFlavour flavour) {
+
+        ValidatorConfig validatorConfig;
+
+        if(flavour==null) {
+            LOGGER.trace("Creating default validation configuration");
+            validatorConfig = ValidatorFactory.defaultConfig();
+        } else {
+            LOGGER.trace("Creating validation configuration with flavour {}, LOG_SUCCESS_CHECKS {}, " +
+                    "MAX_FAILED_CHECKS_PER_RULE {}", flavour.toString(), LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
+            validatorConfig = ValidatorFactory.createConfig(flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
+        }
+        FeatureExtractorConfig featureConfig = FeatureFactory.defaultConfig();
+        PluginsCollectionConfig pluginsConfig = PluginsCollectionConfig.defaultConfig();
+        MetadataFixerConfig fixerConfig = FixerFactory.defaultConfig();
+
+        LOGGER.trace("Creating processor config with default values");
+        return ProcessorFactory.fromValues(validatorConfig, featureConfig,
+                pluginsConfig, fixerConfig, getTasks());
+
+    }
+
 
 	private static InputStream validateFilePath(String filePath) throws VeraPDFException {
 		File directoryPath = new File(filePath);
+        final FileFilter fileFilter = new WildcardFileFilter("*.pdf*");
+        List<File> files = new ArrayList<>();
 
-		// Default validator config
-		ValidatorConfig validatorConfig = ValidatorFactory.defaultConfig();
-		// Default features config
-		FeatureExtractorConfig featureConfig = FeatureFactory.defaultConfig();
-		// Default plugins config
-		PluginsCollectionConfig pluginsConfig = PluginsCollectionConfig.defaultConfig();
-		// Default fixer config
-		MetadataFixerConfig fixerConfig = FixerFactory.defaultConfig();
-		// Tasks configuring
+        class RecursivePDFFinder extends SimpleFileVisitor<java.nio.file.Path> {
 
-		// Creating processor config
-		ProcessorConfig processorConfig = ProcessorFactory.fromValues(validatorConfig, featureConfig,
-				pluginsConfig, fixerConfig, getTasks());
+            List<File> pdfFiles = new ArrayList<>();
+
+            @Override
+            public FileVisitResult preVisitDirectory(java.nio.file.Path dir,
+                    BasicFileAttributes attributes) {
+                LOGGER.trace("Directory: " + dir.toString());
+                File thisDirectory = new File(dir.toString());
+                Collections.addAll(pdfFiles, thisDirectory.listFiles(fileFilter));
+                return FileVisitResult.CONTINUE;
+            }
+
+            public List<File> getPdfFiles() {
+                return this.pdfFiles;
+            }
+        }
+
+        RecursivePDFFinder pdfFinder = new RecursivePDFFinder();
 
 		// The specified filePath may either be a path to a single PDF or a path to a directory.
 		// If it is a directory, recursively list all PDF files (files having extension containing pdf)
 		// and run the processor on all of them.
-		List<File> files = new ArrayList<>();
 		if(directoryPath.isDirectory()) {
-			LOGGER.trace("Validating directory of files at " + filePath);
-			FileFilter fileFilter = new WildcardFileFilter("*.pdf*");
-			File[] pdfFiles = directoryPath.listFiles(fileFilter);
-			Collections.addAll(files, pdfFiles);
-			LOGGER.trace("Added " + pdfFiles.length + " files to be validated");
+			LOGGER.trace("Validating directory of files at {}", filePath);
+
+            try {
+                // TODO: implement options for following or ignoring symbolic links
+                Files.walkFileTree(Paths.get(filePath), pdfFinder);
+            } catch (IOException exception) {
+                LOGGER.error("An exception occurred while finding PDF files", exception);
+                throw new VeraPDFException("An exception occurred while finding PDF files", exception);
+            }
+
+            files = pdfFinder.getPdfFiles();
+            LOGGER.trace("Recursively found {} PDF files", files.size());
+
 		} else {
-			LOGGER.trace("Validating individual file at " + filePath);
+			LOGGER.trace("Validating individual file at {}", filePath);
 			files.add(new File(filePath));
 		}
 
-		return processFilesCreateHtmlReport(files, processorConfig);
+		if(!files.isEmpty()) {
+            return processFilesCreateHtmlReport(files, null);
+        } else {
+		    LOGGER.debug("No files to process, so not preparing HTML report");
+		    return null;
+        }
 	}
 
+    private static PDFAFlavour detectFlavour(InputStream detectStream)
+            throws ModelParsingException, EncryptedPdfException {
+
+        PDFAParser parser = Foundries.defaultInstance().createParser(detectStream);
+        return parser.getFlavour();
+
+    }
 
 }
