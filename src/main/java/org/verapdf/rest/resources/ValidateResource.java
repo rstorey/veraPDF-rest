@@ -205,6 +205,7 @@ public class ValidateResource {
 				LOGGER.trace("Profile type {} was auto-detected", flavour.toString());
 
 			} catch(FileNotFoundException exception) {
+				LOGGER.error("Problem detecting profile from uploaded file", exception);
 				throw new VeraPDFException("Problem detecting profile from uploaded file", exception);
 			}
 		}
@@ -212,6 +213,7 @@ public class ValidateResource {
 		try {
 			uploadedInputStream.close();
 		} catch(IOException exception) {
+			LOGGER.error("An exception occurred reading the uploaded file", exception);
 			throw new VeraPDFException("An exception occurred reading the uploaded file", exception);
 		}
 
@@ -238,6 +240,7 @@ public class ValidateResource {
 			LOGGER.trace("Creating a temp file with prefix {} and suffix {}", TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
 			file = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
 		} catch (IOException exception) {
+			LOGGER.error("IOException creating a temp file", exception);
 			throw new VeraPDFException("IOException creating a temp file", exception); //$NON-NLS-1$
 		}
 
@@ -246,6 +249,7 @@ public class ValidateResource {
 					file.getAbsoluteFile());
 			IOUtils.copy(uploadedInputStream, fos);
 		} catch (IOException exception) {
+			LOGGER.error("IOException writing to temp file", exception);
 			throw new VeraPDFException("IOException writing to temp file", exception); //$NON-NLS-1$
 		}
 
@@ -262,6 +266,7 @@ public class ValidateResource {
 		InputStream xmlBis;
 		ByteArrayOutputStream htmlBos;
 
+		LOGGER.trace("Processing " + files.size() + " files to create an HTML report");
 		try (ByteArrayOutputStream xmlBos = new ByteArrayOutputStream()) {
 			processor = ProcessorFactory.fileBatchProcessor(processorConfig);
 			summary = processor.process(files,
@@ -274,6 +279,7 @@ public class ValidateResource {
 			htmlBytes = htmlBos.toByteArray();
 
 		} catch (IOException | TransformerException exception) {
+			LOGGER.error("An exception occurred while processing files for an HTML report", exception);
 			throw new VeraPDFException("An exception occurred while validating", exception); //$NON-NLS-1$
 		}
 
@@ -303,10 +309,12 @@ public class ValidateResource {
 			result = ValidationResults.defaultResult();
 
 			if(!profileId.equals(AUTODETECT_PROFILE)) {
+				LOGGER.trace("Using specified profile flavour for validation " + profileId);
 				/* Use the specified profile flavour for validation */
 				flavour = PDFAFlavour.byFlavourId(profileId);
 				parser = Foundries.defaultInstance().createParser(digestInputStream, flavour);
 			} else {
+				LOGGER.trace("Auto-detecting profile for uploaded input stream");
 				/* Don't specify a profile flavour for validation - use veraPDF to autodetect the profile */
 				parser = Foundries.defaultInstance().createParser(digestInputStream);
 				flavour = parser.getFlavour();
@@ -319,9 +327,11 @@ public class ValidateResource {
 			If we have the same sha-1 then it's a PDF parse error, so
 			treat as non PDF.
 			*/
+			LOGGER.error("Caught a model parsing exception during validation", mpException);
 			if(sha1Hex!=null) {
 				if (sha1Hex.equalsIgnoreCase(Hex.encodeHexString(sha1.digest()))) {
-				 throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
+					LOGGER.error("File does not appear to be a PDF");
+					throw new NotSupportedException(Response.status(Status.UNSUPPORTED_MEDIA_TYPE)
 						.type(MediaType.TEXT_PLAIN).entity("File does not appear " +
 								 "to be a PDF.").build(), mpException); //$NON-NLS-1$ //$NON-NLS-2$
 				}
@@ -338,9 +348,10 @@ public class ValidateResource {
 		} catch (NoSuchAlgorithmException nsaException) {
 			// If this happens the Java Digest algorithms aren't present, a
 			// faulty Java install??
+			LOGGER.error("No digest algorithm implementation for " + SHA1_NAME, nsaException);
 			throw new IllegalStateException(
 					"No digest algorithm implementation for " +
-                            SHA1_NAME + ", check your Java installation.", nsaException); //$NON-NLS-1$ //$NON-NLS-2$
+                            SHA1_NAME, nsaException); //$NON-NLS-1$
 		}
 	}
 
@@ -375,10 +386,13 @@ public class ValidateResource {
 		// and run the processor on all of them.
 		List<File> files = new ArrayList<>();
 		if(directoryPath.isDirectory()) {
+			LOGGER.trace("Validating directory of files at " + filePath);
 			FileFilter fileFilter = new WildcardFileFilter("*.pdf*");
 			File[] pdfFiles = directoryPath.listFiles(fileFilter);
 			Collections.addAll(files, pdfFiles);
+			LOGGER.trace("Added " + pdfFiles.length + " files to be validated");
 		} else {
+			LOGGER.trace("Validating individual file at " + filePath);
 			files.add(new File(filePath));
 		}
 
