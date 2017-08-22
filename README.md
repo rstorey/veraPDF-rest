@@ -28,8 +28,6 @@ This uses a Docker multi-stage build so the final container image which
 may be deployed does not require more than the base OpenJDK JRE without
 the entire build tool-chain.
 
-Tested lightly:
-
 ```
 docker build -t verapdf-rest:latest . && docker run -d -p 8080:8080 -p 8081:8081 verapdf-rest:latest
 ```
@@ -37,28 +35,11 @@ docker build -t verapdf-rest:latest . && docker run -d -p 8080:8080 -p 8081:8081
 If you encounter an error during docker run about "Can't set cookie dm_task_set_cookie failed", try:
 
 ```
-sudo dmsetup udevcomplete_all
-```
-
-The built verapdf-rest image is notable smaller than just the base Maven image even before you consider the 
-downloaded dependencies so the multi-stage build is definitely worthwhile:
-
-```
-cadams@ganymede:~ $ docker images
-REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-verapdf-rest        latest              c3c2a52a7bc0        5 minutes ago       297MB
-maven               latest              88714384d642        11 days ago         749MB
-```
-
-Using the Alpine-based OpenJRE images provides a further hefty size reduction and we don't seem to be using 
-anything which would be easier on Ubuntu:
-
-```
-verapdf-rest        latest              c69af6445b35        31 seconds ago      103MB
+docker build -t verapdf-rest:latest . && echo 'y' | sudo dmsetup udevcomplete_all && docker run -d -p 8080:8080 -p 8081:8081 verapdf-rest:latest
 ```
 
 ### Project structure
-Currently it's delivered as a single Maven module, veraPDF-rest.
+If you don't want to use Docker, the project can be delivered as a single Maven module, veraPDF-rest.
 
 ### Want to try?
 First clone this project, got to the project directory and then build the Maven project:
@@ -126,7 +107,11 @@ You can also list the available validation profiles at
 
 Services and curl tests
 -----------------------
-There are a few services that you can test a few with [curl](https://curl.haxx.se/).
+There are a few services that you can test with [curl](https://curl.haxx.se/). The curl call defaults to a JSON 
+representation. To obtain the XML profile, add the "Accept" header like so:
+                                                                               
+    curl localhost:8080/api/profiles/1b -H  "Accept:application/xml"
+
 
 ### API Environment service
 Shows some simple information about the server environment on [localhost:8080/api](http://localhost:8080/api)
@@ -148,17 +133,37 @@ An individual profile can be obtained by ID at http://localhost:8080/api/profile
 [localhost:8080/api/profiles/1b/](http://localhost:8080/api/profiles/1b/):
 
     curl localhost:8080/api/profiles/1b
+    
+Flavours implemented for each profile:
+    
+    curl localhost:8080/api/profiles/flavours
 
-The curl call defaults to a JSON representation, to obtain the XML profile:
+Individual rules checked for a profile:
 
-    curl localhost:8080/api/profiles/1b -H  "Accept:application/xml"
+    curl localhost:8080/api/profiles/{profileId}/ruleids
+
+Specific clauses for a profile:
+
+    curl localhost:8080/api/profiles/{profileId}/{clause}    
+
 
 ### PDF/A Validation services
-PDF/A validation is also available as a POST service at http://localhost:8080/api/validate/*id*. There's currently 
-no client application or page, but curl can be used:
+
+A web-based client which allows an individual file to be uploaded and validated is at http://localhost:8080
+
+PDF/A validation is also available as a POST service at http://localhost:8080/api/validate/*id*
 
     curl -F "file=@veraPDF-corpus/PDF_A-1b/6.1 File structure/6.1.12 Implementation limits/veraPDF test suite 6-1-12-t01-fail-a.pdf" localhost:8080/api/validate/1b
 
-or to obtain the result in XML:
+POST PDF/A validation with result in XML:
 
     curl -F "file=@veraPDF-corpus/PDF_A-1b/6.1 File structure/6.1.12 Implementation limits/veraPDF test suite 6-1-12-t01-fail-a.pdf" localhost:8080/api/validate/1b -H  "Accept:application/xml"
+
+There is a PUT option for PDF/A validation as well as an auto-detect mode for the profile.
+
+    curl -T "veraPDF-corpus/PDF_A-1b/6.1 File structure/6.1.12 Implementation limits/veraPDF test suite 6-1-12-t01-fail-a.pdf" localhost:8080/api/validate/auto
+    
+To run auto-detect profile validation on a directory of files, use the GET method, which can accept either a file or
+directory path as the "directoryPath" value:
+
+    localhost:8080/api/validate/processFiles?directoryPath=/opt/pdfa-testsuite
