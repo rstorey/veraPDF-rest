@@ -148,6 +148,9 @@ Specific clauses for a profile:
 
 
 ### PDF/A Validation services
+
+A web-based client which allows an individual file to be uploaded and validated is at http://localhost:8080
+
 PDF/A validation is also available as a POST service at http://localhost:8080/api/validate/*id*
 
     curl -F "file=@veraPDF-corpus/PDF_A-1b/6.1 File structure/6.1.12 Implementation limits/veraPDF test suite 6-1-12-t01-fail-a.pdf" localhost:8080/api/validate/1b
