@@ -12,6 +12,7 @@ public class Environment {
     private final ServerDetails hardware = ServerDetails.getInstance();
     private final OsDetails os = OsDetails.getInstance();
     private final JvmDetails java = JvmDetails.getInstance();
+    private final VeraPDFDetails veraPDF = VeraPDFDetails.getInstance();
 
     private Environment() {
         // Do nothing
@@ -40,4 +41,10 @@ public class Environment {
     public JvmDetails getJava() {
         return this.java;
     }
+
+    /**
+     * @return the veraPDF details
+     */
+    @JsonProperty
+    public VeraPDFDetails getVeraPDF() { return this.veraPDF; }
 }
