@@ -185,9 +185,6 @@ public class ValidateResource {
 		PDFAFlavour flavour;
 		PDFAParser parser;
 
-		ValidatorConfig validatorConfig;
-		ProcessorConfig processorConfig;
-
 		LOGGER.info("Received a POST validate HTML request with profileId:{} sha1Hex: {}", profileId, sha1Hex);
 
 		LOGGER.trace("Saving uploaded file to temp file on local disk");
@@ -215,17 +212,11 @@ public class ValidateResource {
 			throw new VeraPDFException("An exception occurred reading the uploaded file", exception);
 		}
 
-		LOGGER.trace("Creating validation configuration with flavour {}, LOG_SUCCESS_CHECKS {}, " +
-						"MAX_FAILED_CHECKS_PER_RULE {}", flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
-		validatorConfig = ValidatorFactory.createConfig(flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
-		LOGGER.trace("Creating processor config with default values");
-		processorConfig = ProcessorFactory.fromValues(validatorConfig, FeatureFactory.defaultConfig(),
-				PluginsCollectionConfig.defaultConfig(), FixerFactory.defaultConfig(), getTasks());
 
 		files = Collections.singletonList(file);
 
 		LOGGER.trace("Validating and preparing HTML report for {} files", files.size());
-		return processFilesCreateHtmlReport(files, processorConfig);
+		return processFilesCreateHtmlReport(files, flavour);
 	}
 
 	/*
@@ -252,11 +243,12 @@ public class ValidateResource {
 		return file;
 	}
 
-	private static ByteArrayInputStream processFilesCreateHtmlReport(List<File> files, ProcessorConfig processorConfig)
+	private static ByteArrayInputStream processFilesCreateHtmlReport(List<File> files, PDFAFlavour flavour)
 		throws VeraPDFException {
 
 		BatchProcessor processor;
 		BatchSummary summary;
+        ProcessorConfig processorConfig = configureProcessor(flavour);
 
 		byte[] htmlBytes;
 		InputStream xmlBis;
@@ -336,8 +328,6 @@ public class ValidateResource {
 		try {
 			return MessageDigest.getInstance(SHA1_NAME);
 		} catch (NoSuchAlgorithmException nsaException) {
-			// If this happens the Java Digest algorithms aren't present, a
-			// faulty Java install??
 			throw new IllegalStateException(
 					"No digest algorithm implementation for " +
                             SHA1_NAME + ", check your Java installation.", nsaException); //$NON-NLS-1$ //$NON-NLS-2$
@@ -352,23 +342,31 @@ public class ValidateResource {
 		return tasks;
 	}
 
+	private static ProcessorConfig configureProcessor(PDFAFlavour flavour) {
+
+        ValidatorConfig validatorConfig;
+
+        if(flavour==null) {
+            LOGGER.trace("Creating default validation configuration");
+            validatorConfig = ValidatorFactory.defaultConfig();
+        } else {
+            LOGGER.trace("Creating validation configuration with flavour {}, LOG_SUCCESS_CHECKS {}, " +
+                    "MAX_FAILED_CHECKS_PER_RULE {}", flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
+            validatorConfig = ValidatorFactory.createConfig(flavour, LOG_SUCCESS_CHECKS, MAX_FAILED_CHECKS_PER_RULE);
+        }
+        FeatureExtractorConfig featureConfig = FeatureFactory.defaultConfig();
+        PluginsCollectionConfig pluginsConfig = PluginsCollectionConfig.defaultConfig();
+        MetadataFixerConfig fixerConfig = FixerFactory.defaultConfig();
+
+        LOGGER.trace("Creating processor config with default values");
+        return ProcessorFactory.fromValues(validatorConfig, featureConfig,
+                pluginsConfig, fixerConfig, getTasks());
+
+    }
+
 
 	private static InputStream validateFilePath(String filePath) throws VeraPDFException {
 		File directoryPath = new File(filePath);
-
-		// Default validator config
-		ValidatorConfig validatorConfig = ValidatorFactory.defaultConfig();
-		// Default features config
-		FeatureExtractorConfig featureConfig = FeatureFactory.defaultConfig();
-		// Default plugins config
-		PluginsCollectionConfig pluginsConfig = PluginsCollectionConfig.defaultConfig();
-		// Default fixer config
-		MetadataFixerConfig fixerConfig = FixerFactory.defaultConfig();
-		// Tasks configuring
-
-		// Creating processor config
-		ProcessorConfig processorConfig = ProcessorFactory.fromValues(validatorConfig, featureConfig,
-				pluginsConfig, fixerConfig, getTasks());
 
 		// The specified filePath may either be a path to a single PDF or a path to a directory.
 		// If it is a directory, recursively list all PDF files (files having extension containing pdf)
@@ -382,7 +380,7 @@ public class ValidateResource {
 			files.add(new File(filePath));
 		}
 
-		return processFilesCreateHtmlReport(files, processorConfig);
+		return processFilesCreateHtmlReport(files, null);
 	}
 
 
