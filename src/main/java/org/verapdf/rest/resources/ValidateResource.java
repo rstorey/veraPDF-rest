@@ -349,6 +349,7 @@ public class ValidateResource {
 	private static EnumSet<TaskType> getTasks() {
 		EnumSet<TaskType> tasks = EnumSet.noneOf(TaskType.class);
         tasks.add(TaskType.VALIDATE);
+        // TODO: implement options to run these tasks
 //		tasks.add(TaskType.EXTRACT_FEATURES);
 //		tasks.add(TaskType.FIX_METADATA);
 		return tasks;

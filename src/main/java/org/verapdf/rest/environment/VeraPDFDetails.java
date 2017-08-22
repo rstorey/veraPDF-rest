@@ -14,6 +14,7 @@ public class VeraPDFDetails {
     private final String version;
     private final String modelVersions;
 
+    // TODO: move these to a properties file, then read them into pom.xml and here
     private VeraPDFDetails() {
         this.version = "1.4.1";
         this.modelVersions = "1.6.0,1.7.0";

@@ -12,26 +12,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>.</p>
  */
 public class VeraPdfRestConfiguration extends Configuration {
-    //
-    // FIXME: This isn't mapping to the port option from the config
-    //
-    private int port;
-
-    /**
-     * @return the TCP/IP port used
-     */
-    @JsonProperty
-    public int getPort() {
-        return this.port;
-    }
-
-    /**
-     * @param port
-     *            numeric value of TCP/IP port to listen to
-     */
-    @JsonProperty
-    public void setPort(int port) {
-        this.port = port;
-    }
 
 }
