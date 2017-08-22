@@ -4,6 +4,8 @@ FROM maven as builder
 RUN mkdir /build
 WORKDIR /build
 RUN git clone https://github.com/rstorey/veraPDF-rest.git
+RUN git clone https://github.com/bfosupport/pdfa-testsuite.git /pdfa-testsuite
+RUN git clone https://github.com/veraPDF/veraPDF-corpus /verapdf-corpus
 RUN cd veraPDF-rest && git checkout integration && mvn clean package
 
 
