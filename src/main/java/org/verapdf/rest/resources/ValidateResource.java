@@ -10,7 +10,14 @@ import java.io.OutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileFilter;
+
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+
+import java.nio.file.Files;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.Paths;
+import java.nio.file.FileVisitResult;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +27,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 import javax.ws.rs.*;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -373,21 +379,46 @@ public class ValidateResource {
 
 	private static InputStream validateFilePath(String filePath) throws VeraPDFException {
 		File directoryPath = new File(filePath);
+        final FileFilter fileFilter = new WildcardFileFilter("*.pdf*");
+        List<File> files = new ArrayList<>();
+
+        class RecursivePDFFinder extends SimpleFileVisitor<java.nio.file.Path> {
+
+            List<File> pdfFiles = new ArrayList<>();
+
+            @Override
+            public FileVisitResult preVisitDirectory(java.nio.file.Path dir,
+                    BasicFileAttributes attributes) {
+                LOGGER.trace("Directory: " + dir.toString());
+                File thisDirectory = new File(dir.toString());
+                Collections.addAll(pdfFiles, thisDirectory.listFiles(fileFilter));
+                return FileVisitResult.CONTINUE;
+            }
+
+            public List<File> getPdfFiles() {
+                return this.pdfFiles;
+            }
+        }
+
+        RecursivePDFFinder pdfFinder = new RecursivePDFFinder();
 
 		// The specified filePath may either be a path to a single PDF or a path to a directory.
 		// If it is a directory, recursively list all PDF files (files having extension containing pdf)
 		// and run the processor on all of them.
-		List<File> files = new ArrayList<>();
 		if(directoryPath.isDirectory()) {
 			LOGGER.trace("Validating directory of files at {}", filePath);
-			FileFilter fileFilter = new WildcardFileFilter("*.pdf*");
-			File[] pdfFiles = directoryPath.listFiles(fileFilter);
-			if(pdfFiles!=null) {
-                Collections.addAll(files, pdfFiles);
-                LOGGER.trace("Added {} files to be validated", pdfFiles.length);
-            } else {
-			    LOGGER.debug("Did not find any PDF files at {}", filePath);
+
+            try {
+                // TODO: implement options for following or ignoring symbolic links
+                Files.walkFileTree(Paths.get(filePath), pdfFinder);
+            } catch (IOException exception) {
+                LOGGER.error("An exception occurred while finding PDF files", exception);
+                throw new VeraPDFException("An exception occurred while finding PDF files", exception);
             }
+
+            files = pdfFinder.getPdfFiles();
+            LOGGER.trace("Recursively found {} PDF files", files.size());
+
 		} else {
 			LOGGER.trace("Validating individual file at {}", filePath);
 			files.add(new File(filePath));
