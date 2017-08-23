@@ -9,6 +9,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
+import io.swagger.annotations.ApiOperation;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.openpreservation.bytestreams.ByteStreamId;
@@ -22,6 +23,7 @@ import org.openpreservation.bytestreams.ByteStreams;
  * 
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>.</p>
  */
+
 public class ByteStreamResource {
     /**
      * Default public constructor required by Jersey / Dropwizard
@@ -40,6 +42,7 @@ public class ByteStreamResource {
      *         content type.
      */
     @POST
+    @ApiOperation(value = "Calculate sha-1 of an uploaded file", response = ByteStreamId.class)
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML,
             MediaType.TEXT_XML })
@@ -59,6 +62,7 @@ public class ByteStreamResource {
      *         content type.
      */
     @PUT
+    @ApiOperation(value = "Calculate sha-1 of an uploaded file", response = ByteStreamId.class)
     @Consumes(MediaType.WILDCARD)
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML,
             MediaType.TEXT_XML })
@@ -75,12 +79,14 @@ public class ByteStreamResource {
      *         content type.
      */
     @GET
+    @ApiOperation(value = "Returns sha-1 value for null stream", response = ByteStreamId.class)
     @Path("/null")
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML,
             MediaType.TEXT_XML })
     public static ByteStreamId getEmptySha1() {
         return ByteStreams.nullByteStreamId();
     }
+
 
     private static ByteStreamId calculateSha1(InputStream uploadedInputStream) {
         try {

@@ -3,6 +3,8 @@ package org.verapdf.rest.app;
 import io.dropwizard.Configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+
 
 /**
  * Configuration object for the Dropwizard app. Reads defaults from
@@ -12,5 +14,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>.</p>
  */
 public class VeraPdfRestConfiguration extends Configuration {
-
+    @JsonProperty("swagger")
+    public SwaggerBundleConfiguration swaggerBundleConfiguration;
 }

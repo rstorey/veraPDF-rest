@@ -10,6 +10,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import io.swagger.annotations.ApiOperation;
 import org.verapdf.pdfa.flavours.PDFAFlavour;
 import org.verapdf.pdfa.validation.profiles.ProfileDetails;
 import org.verapdf.pdfa.validation.profiles.ProfileDirectory;
@@ -21,6 +22,7 @@ import org.verapdf.pdfa.validation.profiles.ValidationProfile;
 /**
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>
  */
+
 @Singleton
 public class ProfileResource {
 	private static final ProfileDirectory DIRECTORY = Profiles.getVeraProfileDirectory();
@@ -35,6 +37,9 @@ public class ProfileResource {
 	 * @return the set of validation profile details
 	 */
 	@GET
+	@ApiOperation(	value = "Get a set of details about available PDF/A validation profiles",
+					responseContainer = "Set",
+					response = ProfileDetails.class)
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	public static Set<ProfileDetails> getProfileDetails() {
 		return DETAILS;
@@ -44,6 +49,10 @@ public class ProfileResource {
 	 * @return the Set of Validation Profile IDs
 	 */
 	@GET
+	@ApiOperation(	value = "Get a set of 2-letter ID codes for available PDF/A validation profiles",
+					notes = "1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u",
+					response = String.class,
+					responseContainer = "Set")
 	@Path("/ids")
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	public static Set<String> getProfileIds() {
@@ -54,6 +63,9 @@ public class ProfileResource {
 	 * @return the Set of PDF/A Flavours
 	 */
 	@GET
+	@ApiOperation(	value = "Get the set of PDF/A flavours",
+					responseContainer = "Set",
+					response = PDFAFlavour.class)
 	@Path("/flavours")
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	public static Set<PDFAFlavour> getFlavours() {
@@ -67,6 +79,9 @@ public class ProfileResource {
 	 * @return a validation profile selected by id
 	 */
 	@GET
+	@ApiOperation(	value = "Get the validation profile for the specified 2-letter profileId code",
+					notes = "1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u",
+					response = ValidationProfile.class)
 	@Path("/{profileId}")
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	public static ValidationProfile getProfile(@PathParam("profileId") String profileId) {
@@ -82,6 +97,10 @@ public class ProfileResource {
 	 *         Validation Profile
 	 */
 	@GET
+	@ApiOperation(	value = "Get the set of rule IDs for the specified validation profile",
+					notes = "1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u",
+					response = RuleId.class,
+					responseContainer = "Set")
 	@Path("/{profileId}/ruleids")
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	public static Set<RuleId> getProfileRules(@PathParam("profileId") String profileId) {
@@ -104,6 +123,10 @@ public class ProfileResource {
 	 *         profile and clause
 	 */
 	@GET
+	@ApiOperation(	value = "Get the set of rules for the selected profile and clause",
+					notes = "1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u",
+					response = Rule.class,
+					responseContainer = "Set")
 	@Path("/{profileId}/{clause}")
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	public static Set<Rule> getRulesForClause(@PathParam("profileId") String profileId,

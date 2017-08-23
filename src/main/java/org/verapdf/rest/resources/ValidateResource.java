@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.FileFilter;
 
 import com.codahale.metrics.annotation.Timed;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.nio.file.Files;
@@ -70,6 +71,7 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>
  * @author <a href="mailto:rstorey@loc.gov">Rosie Storey</a>
  */
+
 @Timed
 public class ValidateResource {
 	// java.security.digest name for the SHA-1 algorithm
@@ -102,6 +104,9 @@ public class ValidateResource {
 	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
 	@POST
+	@ApiOperation( 	value = "Upload and validate a PDF file",
+					notes = "Profile Ids: auto, 1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u",
+					response = ValidationResult.class)
 	@Path("/{profileId}")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
@@ -124,6 +129,8 @@ public class ValidateResource {
 	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
 	@GET
+	@ApiOperation(	value = "Validate a single file or directory of files on the local disk",
+					notes = "Recursively finds PDF files in the specified path and performs auto-detect validation")
 	@Path("/processFiles")
 	@Produces({ MediaType.TEXT_HTML })
 	public static InputStream processFilesGet(@QueryParam("directoryPath") String directoryPath)
@@ -147,6 +154,9 @@ public class ValidateResource {
 	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
 	@PUT
+	@ApiOperation(	value = "Upload and validate a single file according to the specified profile Id",
+					notes = "Profile Ids: auto, 1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u",
+					response = ValidationResult.class)
 	@Path("/{profileId}")
 	@Consumes( MediaType.WILDCARD)
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
@@ -177,6 +187,8 @@ public class ValidateResource {
 	 * 			  throws {@link org.verapdf.core.VeraPDFException} for any exception from core library
 	 */
 	@POST
+	@ApiOperation( value = "Upload and validate a single PDF file",
+					notes = "ProfileIds: auto, 1b, 1a, 2b, 2a, 2u, 3b, 3a, 3u")
 	@Path("/{profileId}")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces({ MediaType.TEXT_HTML })

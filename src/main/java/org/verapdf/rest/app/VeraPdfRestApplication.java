@@ -5,6 +5,8 @@ import java.util.EnumSet;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 
+import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.federecio.dropwizard.swagger.SwaggerBundle;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.verapdf.rest.resources.ApiResource;
 import org.verapdf.rest.resources.HomePageResource;
@@ -55,6 +57,12 @@ public class VeraPdfRestApplication extends Application<VeraPdfRestConfiguration
         bootstrap.addBundle(new AssetsBundle("/assets/css", "/css", null, "css")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         bootstrap.addBundle(new AssetsBundle("/assets/js", "/js", null, "js")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         bootstrap.addBundle(new AssetsBundle("/assets/img", "/img", null, "img")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-
+        bootstrap.addBundle(new SwaggerBundle<VeraPdfRestConfiguration>() {
+            @Override
+            protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(VeraPdfRestConfiguration configuration) {
+                return configuration.swaggerBundleConfiguration;
+            }
+        });
     }
 
     @Override
