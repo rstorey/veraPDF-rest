@@ -9,6 +9,16 @@ server:
 swagger:
   resourcePackage: org.verapdf.rest.resources,ApiResource,org.verapdf.rest.resources.ValidateResource,org.verapdf.rest.resources.ProfileResource,org.verapdf.rest.resources.ByteStreamResource
 
+sundial:
+  thread-pool-size: 10
+  shutdown-on-unload: true
+  wait-on-shutdown: false
+  start-delay-seconds: 20
+  start-scheduler-on-load: true
+  global-lock-on-load: false
+  annotated-jobs-package-name: org.verapdf.rest.jobs
+  tasks: [startjob, stopjob]
+
 logging:
 
   level: INFO

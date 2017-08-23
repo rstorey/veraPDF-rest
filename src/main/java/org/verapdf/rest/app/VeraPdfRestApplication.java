@@ -8,6 +8,8 @@ import javax.servlet.FilterRegistration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.knowm.dropwizard.sundial.SundialBundle;
+import org.knowm.dropwizard.sundial.SundialConfiguration;
 import org.verapdf.rest.resources.ApiResource;
 import org.verapdf.rest.resources.HomePageResource;
 import org.verapdf.rest.resources.ValidationExceptionMapper;
@@ -57,10 +59,19 @@ public class VeraPdfRestApplication extends Application<VeraPdfRestConfiguration
         bootstrap.addBundle(new AssetsBundle("/assets/css", "/css", null, "css")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         bootstrap.addBundle(new AssetsBundle("/assets/js", "/js", null, "js")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         bootstrap.addBundle(new AssetsBundle("/assets/img", "/img", null, "img")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-
+        // Swagger provides auto-documentation for the REST API at /swagger
         bootstrap.addBundle(new SwaggerBundle<VeraPdfRestConfiguration>() {
             @Override
             protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(VeraPdfRestConfiguration configuration) {
-                return configuration.swaggerBundleConfiguration;
+                return configuration.getSwagger();
+            }
+        });
+        // Sundial provides job scheduling
+        bootstrap.addBundle(new SundialBundle<VeraPdfRestConfiguration>() {
+
+            @Override
+            public SundialConfiguration getSundialConfiguration(VeraPdfRestConfiguration configuration) {
+                return configuration.getSundial();
             }
         });
     }

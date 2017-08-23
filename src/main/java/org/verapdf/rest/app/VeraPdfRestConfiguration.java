@@ -4,6 +4,10 @@ import io.dropwizard.Configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import org.knowm.dropwizard.sundial.SundialConfiguration;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 
 /**
@@ -14,6 +18,22 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
  * @author <a href="mailto:carl@openpreservation.org">Carl Wilson</a>.</p>
  */
 public class VeraPdfRestConfiguration extends Configuration {
+    @Valid
+    @NotNull
+    private final SwaggerBundleConfiguration swagger = new SwaggerBundleConfiguration();
+
+    @Valid
+    @NotNull
+    private final SundialConfiguration sundial = new SundialConfiguration();
+
     @JsonProperty("swagger")
-    public SwaggerBundleConfiguration swaggerBundleConfiguration;
+    public SwaggerBundleConfiguration getSwagger() {
+        return swagger;
+    }
+
+    @JsonProperty("sundial")
+    public SundialConfiguration getSundial() {
+        return sundial;
+    }
+
 }
