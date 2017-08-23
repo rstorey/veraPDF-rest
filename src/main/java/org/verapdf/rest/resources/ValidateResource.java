@@ -223,7 +223,7 @@ public class ValidateResource {
 		files = Collections.singletonList(file);
 
 		LOGGER.trace("Validating and preparing HTML report for {} files", files.size());
-		return processFilesCreateHtmlReport(files, flavour);
+		return processFilesCreateHtmlReport(null, files, flavour);
 	}
 
 	/*
@@ -252,7 +252,8 @@ public class ValidateResource {
 		return file;
 	}
 
-	private static ByteArrayInputStream processFilesCreateHtmlReport(List<File> files, PDFAFlavour flavour)
+	private static ByteArrayInputStream processFilesCreateHtmlReport(String directoryPath, List<File> files,
+																	 PDFAFlavour flavour)
 		throws VeraPDFException {
 
 		BatchProcessor processor;
@@ -274,7 +275,11 @@ public class ValidateResource {
 			htmlBos = new ByteArrayOutputStream();
 			HTMLReport.writeHTMLReport(xmlBis, htmlBos, summary, WIKI_URL_BASE, VERBOSE_OUTPUT);
 			htmlBytes = htmlBos.toByteArray();
-
+			if(directoryPath!=null) {
+				createVerifyEventInCTS(directoryPath, htmlBytes);
+			} else {
+				LOGGER.trace("Directory path is null, so because this is an uploaded file, not adding CTS event.");
+			}
 		} catch (IOException | TransformerException exception) {
 			LOGGER.error("An exception occurred while processing files for an HTML report", exception);
 			throw new VeraPDFException("An exception occurred while validating", exception); //$NON-NLS-1$
@@ -283,6 +288,28 @@ public class ValidateResource {
 		return new ByteArrayInputStream(htmlBytes);
 	}
 
+	private static void createVerifyEventInCTS(String directoryPath, byte[] htmlBytes) {
+		LOGGER.trace("(NOT IMPLEMENTED) Creating Verify event in CTS for bag instance with path {}", directoryPath);
+		// TODO: Look up whether there is any inventoried, non-empty bag instance with this directory path
+		// (Currently not supported by CTS web API)
+
+		// TODO: If one or more bag instances are found, create a verify event for each one
+		// https://cts.loc.gov/transfer/inventory/event/VerifyEvent takes a POST request with parameters:
+		// bagInstanceKey or bagInstanceVersionKey (one is required)
+		// eventMessage - optional
+		// eventStart - optional
+		// eventEnd - optional
+		// destFilepath - required
+		// spec - required
+		// conformance - optional
+		// isSuccess - optional
+		// eventSystemId - optional
+
+		// TODO: Determine whether all files passed validation or not to set the isSuccess param
+
+		// TODO: Upload the full report as an event attachment (not currently supported in CTS web API)
+
+	}
 
 	/*
 	This method is used for PUT and POST non-HTML-based validation of a single uploaded file.
@@ -428,7 +455,7 @@ public class ValidateResource {
 		}
 
 		if(!files.isEmpty()) {
-            return processFilesCreateHtmlReport(files, null);
+            return processFilesCreateHtmlReport(filePath, files, null);
         } else {
 		    LOGGER.debug("No files to process, so not preparing HTML report");
 		    return null;
