@@ -25,6 +25,9 @@ logging:
 
   loggers:
     org.verapdf.rest.resources.ValidateResource: TRACE
+    org.verapdf.rest.jobs.PollingJob: TRACE
+    org.verapdf.rest.jobs.StartupJob: TRACE
+    org.verapdf.rest.jobs.StopJob: TRACE
 
   appenders:
     - type: console
