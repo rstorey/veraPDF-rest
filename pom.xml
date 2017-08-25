@@ -156,9 +156,9 @@
 
     <!-- ALL FOR SWAGGER -->
     <dependency>
-      <groupId>gov.loc.repository</groupId>
+      <groupId>com.smoketurner</groupId>
       <artifactId>dropwizard-swagger</artifactId>
-      <version>1.1.2-2-SNAPSHOT</version>
+      <version>1.1.2-1</version>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
