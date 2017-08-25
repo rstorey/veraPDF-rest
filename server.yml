@@ -15,6 +15,7 @@ logging:
 
   loggers:
     org.verapdf.rest.resources.ValidateResource: TRACE
+    org.reflections.Reflections: ERROR
 
   appenders:
     - type: console

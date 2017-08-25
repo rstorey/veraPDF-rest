@@ -12,19 +12,14 @@
   <artifactId>verapdf-rest</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 
-  <name>veraPDF RESTful web services</name>
+  <name>veraPDF REST web services</name>
   <description>JAX-RS web services and client for veraPDF library</description>
 
-
   <scm>
-    <url>https://github.com/veraPDF/veraPDF-rest/</url>
-    <connection>scm:git:https://github.com/veraPDF/veraPDF-rest.git</connection>
-    <developerConnection>scm:git:git@github.com:veraPDF/veraPDF-rest.git</developerConnection>
+    <url>https://github.com/rstorey/veraPDF-rest/</url>
+    <connection>scm:git:https://github.com/rstorey/veraPDF-rest.git</connection>
+    <developerConnection>scm:git:git@github.com:rstorey/veraPDF-rest.git</developerConnection>
   </scm>
-  <issueManagement>
-    <url>https://github.com/veraPDF/veraPDF-rest/issues/</url>
-    <system>GitHub Issues</system>
-  </issueManagement>
 
   <repositories>
     <repository>
@@ -47,8 +42,13 @@
   </repositories>
 
   <properties>
-    <dropwizard.version>1.1.2</dropwizard.version>
-    <verapdf.validation.version>[1.6.0,1.7.0]</verapdf.validation.version>
+    <dropwizard.version>1.1.4</dropwizard.version>
+    <verapdf.validation.version>[1.9.0,1.10.0)</verapdf.validation.version>
+    <jackson.version>2.7.5</jackson.version>
+    <dropwizard-xml.version>41</dropwizard-xml.version>
+    <junit.version>4.12</junit.version>
+    <commons-codec.version>1.10</commons-codec.version>
+    <commons-io.version>2.5</commons-io.version>
   </properties>
 
   <build>
@@ -114,24 +114,24 @@
     <dependency>
       <groupId>com.yunspace.dropwizard</groupId>
       <artifactId>dropwizard-xml</artifactId>
-      <version>41</version>
+      <version>${dropwizard-xml.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-xml-provider</artifactId>
-      <version>2.7.5</version>
+      <version>${jackson.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-xml</artifactId>
-      <version>2.7.5</version>
+      <version>${jackson.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <version>${junit.version}</version>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
@@ -154,26 +154,47 @@
       <version>${dropwizard.version}</version>
     </dependency>
 
+    <!-- ALL FOR SWAGGER -->
     <dependency>
-      <groupId>org.glassfish.jersey.bundles</groupId>
-      <artifactId>jaxrs-ri</artifactId>
-      <version>2.21</version>
-    </dependency>
-    <dependency>
-      <groupId>com.smoketurner</groupId>
+      <groupId>gov.loc.repository</groupId>
       <artifactId>dropwizard-swagger</artifactId>
       <version>1.1.2-2-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.jaxrs</groupId>
+          <artifactId>jackson-jaxrs-xml-provider</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.dataformat</groupId>
+          <artifactId>jackson-dataformat-xml</artifactId>
+      </exclusion>
+      </exclusions>
     </dependency>
+
+    <!-- END OF SWAGGER DEPENDENCIES -->
+
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>1.10</version>
+      <version>${commons-codec.version}</version>
     </dependency>
 
     <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-        <version>2.5</version>
+        <version>${commons-io.version}</version>
     </dependency>
 
     <dependency>
