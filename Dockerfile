@@ -4,10 +4,12 @@
 FROM maven as builder
 RUN mkdir /build
 WORKDIR /build
+RUN git clone https://github.com/rstorey/dropwizard-swagger.git
 RUN git clone https://github.com/rstorey/veraPDF-rest.git
 RUN git clone https://github.com/bfosupport/pdfa-testsuite.git
 RUN git clone https://github.com/veraPDF/veraPDF-corpus
-RUN cd veraPDF-rest && git checkout integration && mvn clean package
+RUN cd /build/dropwizard-swagger && git checkout master && mvn clean install
+RUN cd /build/veraPDF-rest && git checkout integration && mvn clean package
 
 
 FROM openjdk:8-jre-alpine
