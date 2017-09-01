@@ -7,10 +7,7 @@ server:
     port: 8081 
 
 swagger:
-  resourcePackage:  org.verapdf.rest.resources,ApiResource,
-                    org.verapdf.rest.resources.ValidateResource,
-                    org.verapdf.rest.resources.ProfileResource,
-                    org.verapdf.rest.resources.ByteStreamResource
+  resourcePackage:  org.verapdf.rest.resources
 
 logging:
 

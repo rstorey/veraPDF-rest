@@ -4,11 +4,11 @@
 FROM maven as builder
 RUN mkdir /build
 WORKDIR /build
-RUN git clone https://github.com/rstorey/dropwizard-swagger.git
+# RUN git clone https://github.com/rstorey/dropwizard-swagger.git
 RUN git clone https://github.com/rstorey/veraPDF-rest.git
 RUN git clone https://github.com/bfosupport/pdfa-testsuite.git
 RUN git clone https://github.com/veraPDF/veraPDF-corpus
-RUN cd /build/dropwizard-swagger && git checkout master && mvn clean install -DskipTests=true
+# RUN cd /build/dropwizard-swagger && git checkout master && mvn clean install -DskipTests=true
 RUN cd /build/veraPDF-rest && git checkout integration && mvn clean package
 
 
